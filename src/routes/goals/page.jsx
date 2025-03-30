@@ -11,6 +11,7 @@ const GoalsPage = () => {
 
   const handleUpdateGoal = (updatedGoal) => {
     setGoals(goals.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal));
+    
   };
 
   return (
