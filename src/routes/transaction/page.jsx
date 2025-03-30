@@ -1,0 +1,178 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
+import AddTransaction from "./AddTransaction";
+import TransactionDetailsPopup from "./TransactionDetailsPopup";
+
+const TransactionPage = () => {
+  const [user, setUser] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [filterDate, setFilterDate] = useState("");
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [userRes, transactionsRes] = await Promise.all([
+          axios.get("http://127.0.0.1:8088/api/v1/users/me", {
+            withCredentials: true,
+          }),
+          axios.get("http://127.0.0.1:8088/api/v1/transactions", {
+            withCredentials: true,
+          }),
+        ]);
+
+        setUser(userRes.data.data.user);
+        setTransactions(
+          Array.isArray(transactionsRes.data?.data?.transactions)
+            ? transactionsRes.data.data.transactions
+            : []
+        );
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this transaction?"
+    );
+    if (confirmDelete) {
+      try {
+        await axios.delete(`http://127.0.0.1:8088/api/v1/transactions/${id}`, {
+          withCredentials: true,
+        });
+        setTransactions(transactions.filter((tx) => tx.id !== id));
+        setSelectedTransaction(null);
+      } catch (error) {
+        console.error("Error deleting transaction:", error);
+      }
+    }
+  };
+
+  const handleUpdate = (updatedTransaction) => {
+    setTransactions(
+      transactions.map((tx) =>
+        tx.id === updatedTransaction.id ? updatedTransaction : tx
+      )
+    );
+    setSelectedTransaction(updatedTransaction);
+  };
+
+  const filteredTransactions = filterDate
+    ? transactions.filter((tx) => tx.date.includes(filterDate))
+    : transactions;
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">Transactions</h2>
+        <div className="flex space-x-4">
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="border rounded-md px-3 py-2"
+          />
+          <AddTransaction />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Wallet
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Recurring
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredTransactions.map((tx) => (
+              <tr
+                key={tx.id}
+                onClick={() => setSelectedTransaction(tx)}
+                className="hover:bg-gray-50 cursor-pointer"
+              >
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {new Date(tx.date).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {tx.transactionType}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {tx.amount}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {tx.category}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {tx.account?.slug}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      tx.transactionStatus === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {tx.transactionStatus}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {tx.isRecurring ? (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {tx.recurringInterval}
+                    </span>
+                  ) : (
+                    "No"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedTransaction && (
+        <TransactionDetailsPopup
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+          onDelete={handleDelete}
+          onUpdate={handleUpdate}
+        />
+      )}
+    </div>
+  );
+};
+
+export default TransactionPage;
