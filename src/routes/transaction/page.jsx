@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import AddTransaction from "./AddTransaction";
 import TransactionDetailsPopup from "./TransactionDetailsPopup";
+import { FiActivity } from "react-icons/fi";
+import AIReceiptExtraction from "./AIReceiptExtraction";
 
 axios.defaults.withCredentials = true;
 
@@ -10,6 +12,7 @@ const TransactionPage = () => {
   const [filterDate, setFilterDate] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAIExtraction, setShowAIExtraction] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +89,14 @@ const TransactionPage = () => {
             className="border rounded-md px-3 py-2"
           />
           <AddTransaction />
+          {/* <AIReceiptExtraction/> */}
+          <button
+            onClick={() => setShowAIExtraction(true)}
+            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+          >
+            <FiActivity />
+            <span>AI Extraction</span>
+          </button>
         </div>
       </div>
 
@@ -163,7 +174,6 @@ const TransactionPage = () => {
           </tbody>
         </table>
       </div>
-
       {selectedTransaction && (
         <TransactionDetailsPopup
           transaction={selectedTransaction}
@@ -171,6 +181,10 @@ const TransactionPage = () => {
           onDelete={handleDelete}
           onUpdate={handleUpdate}
         />
+      )}
+
+      {showAIExtraction && (
+        <AIReceiptExtraction onClose={() => setShowAIExtraction(false)} />
       )}
     </div>
   );
