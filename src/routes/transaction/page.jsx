@@ -3,8 +3,9 @@ import axios from "axios";
 import AddTransaction from "./AddTransaction";
 import TransactionDetailsPopup from "./TransactionDetailsPopup";
 
+axios.defaults.withCredentials = true;
+
 const TransactionPage = () => {
-  const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [filterDate, setFilterDate] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -14,19 +15,16 @@ const TransactionPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [userRes, transactionsRes] = await Promise.all([
-          axios.get("http://127.0.0.1:8088/api/v1/users/me", {
-            withCredentials: true,
-          }),
-          axios.get("http://127.0.0.1:8088/api/v1/transactions", {
-            withCredentials: true,
-          }),
-        ]);
 
-        setUser(userRes.data.data.user);
+        const transactionsData = await axios.get("http://127.0.0.1:8088/api/v1/transactions",{
+          withCredentials: true,
+        });
+
+        console.log("Transactions Data:", transactionsData.data);
+
         setTransactions(
-          Array.isArray(transactionsRes.data?.data?.transactions)
-            ? transactionsRes.data.data.transactions
+          Array.isArray(transactionsData.data?.data?.transactions)
+            ? transactionsData.data.data.transactions
             : []
         );
       } catch (error) {
@@ -48,7 +46,7 @@ const TransactionPage = () => {
         await axios.delete(`http://127.0.0.1:8088/api/v1/transactions/${id}`, {
           withCredentials: true,
         });
-        setTransactions(transactions.filter((tx) => tx.id !== id));
+        setTransactions(transactions.filter((tx) => tx._id !== id));  // Use _id here
         setSelectedTransaction(null);
       } catch (error) {
         console.error("Error deleting transaction:", error);
@@ -66,8 +64,11 @@ const TransactionPage = () => {
   };
 
   const filteredTransactions = filterDate
-    ? transactions.filter((tx) => tx.date.includes(filterDate))
-    : transactions;
+  ? transactions.filter((tx) => {
+      const txDate = new Date(tx.date).toISOString().split('T')[0];
+      return txDate === filterDate;
+    })
+  : transactions;
 
   if (loading) {
     return <div className="p-6">Loading...</div>;
@@ -118,7 +119,7 @@ const TransactionPage = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredTransactions.map((tx) => (
               <tr
-                key={tx.id}
+                key={tx._id || tx.id}  // Use _id as it's the MongoDB default
                 onClick={() => setSelectedTransaction(tx)}
                 className="hover:bg-gray-50 cursor-pointer"
               >
@@ -132,7 +133,7 @@ const TransactionPage = () => {
                   {tx.amount}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {tx.category}
+                  {tx.category?.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {tx.account?.slug}

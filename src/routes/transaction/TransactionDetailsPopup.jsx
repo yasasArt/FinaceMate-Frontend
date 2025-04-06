@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 const TransactionDetailsPopup = ({
@@ -8,14 +8,50 @@ const TransactionDetailsPopup = ({
   onUpdate,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTransaction, setEditedTransaction] = useState({ ...transaction });
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [editedTransaction, setEditedTransaction] = useState(
+    transaction ? { ...transaction } : {}
+  );
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await axios.get(`http://127.0.0.1:8088/api/v1/categories?type=${transaction.transactionType}`, {
+          withCredentials: true,
+        });
+        setCategories(response.data.data.categories || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+  
+    if (isEditing) {
+      fetchCategories();
+    }
+  }, [isEditing]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedTransaction((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // Special handling for category name
+    if (name === 'category') {
+      setEditedTransaction(prev => ({
+        ...prev,
+        category: {
+          ...prev.category,
+          name: value
+        }
+      }));
+    } else {
+      setEditedTransaction(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -86,14 +122,32 @@ const TransactionDetailsPopup = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={editedTransaction.category}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
-                />
+                {isLoadingCategories ? (
+                  <div className="animate-pulse py-2 rounded-lg bg-gray-200"></div>
+                ) : (
+                  <select
+                    name="category"
+                    value={editedTransaction.category?._id || ""}
+                    onChange={(e) => {
+                      const selectedCategory = categories.find(
+                        (cat) => cat._id === e.target.value
+                      );
+                      setEditedTransaction((prev) => ({
+                        ...prev,
+                        category: selectedCategory,
+                      }));
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
   
               {transaction.isRecurring && (
@@ -167,7 +221,7 @@ const TransactionDetailsPopup = ({
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm font-medium text-gray-500">Category</span>
                 <span className="text-sm font-semibold text-gray-800">
-                  {transaction.category}
+                  {transaction.category?.name}
                 </span>
               </div>
   
