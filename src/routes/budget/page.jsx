@@ -87,12 +87,6 @@ const Budgetpage = () => {
     return Math.round((spent / budget) * 100);
   };
 
-  const calculateTotalSpent = () => budgets.reduce((acc, curr) => acc + curr.spent, 0);
-  const calculateTotalBudget = () => budgets.reduce((acc, curr) => acc + curr.budget, 0);
-  const totalSpent = calculateTotalSpent();
-  const totalBudget = calculateTotalBudget();
-  const budgetUsage = Math.round((totalSpent / totalBudget) * 100);
-
   const handleAddBudget = () => {
     if (newBudget.category && newBudget.budget) {
       const budgetToAdd = {
@@ -166,7 +160,7 @@ const Budgetpage = () => {
   };
 
   return (
-    <div className="p-6 mx-auto relative">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
           <button className="text-gray-500">This month</button>
@@ -188,21 +182,6 @@ const Budgetpage = () => {
           >
             Add Budget Limit
           </button>
-        </div>
-      </div>
-
-      {/* Budget Usage Progress Bar */}
-      <div className="mb-6 p-4 bg-gray-100 rounded-lg">
-        <h3 className="font-semibold mb-2">Total Budget Usage</h3>
-        <div className="w-full bg-gray-300 rounded-full h-4">
-          <div
-            className="bg-purple-500 h-4 rounded-full"
-            style={{ width: `${budgetUsage}%` }}
-          ></div>
-        </div>
-        <div className="flex justify-between mt-2">
-          <span>${totalSpent} spent</span>
-          <span>{budgetUsage}% of ${totalBudget}</span>
         </div>
       </div>
 
@@ -275,16 +254,6 @@ const Budgetpage = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="mt-6 bg-gray-50 rounded-lg p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Most expenses</h3>
-          <select className="text-gray-500 bg-transparent">
-            <option>This month</option>
-          </select>
-        </div>
-        <div>{/* Most expenses list would go here */}</div>
       </div>
 
       {/* Add Budget Modal */}

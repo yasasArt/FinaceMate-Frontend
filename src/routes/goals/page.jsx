@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import GoalCard from "./GoalCard";
-import { FaPlus, FaTrophy, FaChevronDown, FaTimes } from "react-icons/fa";
+import { FaPlus, FaTrophy, FaChevronDown, FaTimes, FaPiggyBank } from "react-icons/fa";
 import axios from "axios";
 import GoalDetailsModal from "./GoalDetailsModal";
 
