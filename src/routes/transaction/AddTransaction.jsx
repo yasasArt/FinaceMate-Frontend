@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 // Configure axios to send cookies
 axios.defaults.withCredentials = true;
 
-function AddTransaction() {
+function AddTransaction({ initialData, onTransactionAdded }) {
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
@@ -26,7 +26,18 @@ function AddTransaction() {
     recurringInterval: ""
   });
 
-  // Fetch accounts from backend
+  // Handle initial data and fetch accounts
+  useEffect(() => {
+    if (initialData) {
+      setNewTransaction(prev => ({
+        ...prev,
+        ...initialData
+      }));
+      setShowForm(true);
+    }
+  }, [initialData]);
+
+  // Fetch accounts when form is shown
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
@@ -87,19 +98,6 @@ function AddTransaction() {
     fetchCategories();
   }, [newTransaction.transactionType]);
 
-  // const handleChange = (e) => {
-  //   const { name, value, type, checked } = e.target;
-  //   setNewTransaction({
-  //     ...newTransaction,
-  //     [name]: type === 'checkbox' ? checked : value,
-  //     [name]: name === "amount" ? parseFloat(value) : value,
-  //     // Reset category when transaction type changes
-  //     ...(name === "transactionType" && { category: "" }),
-  //     // Clear recurring interval if not recurring
-  //     recurringInterval: name === "isRecurring" && !checked ? null : newTransaction.recurringInterval
-  //   });
-  // };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
   
@@ -115,11 +113,10 @@ function AddTransaction() {
   
     // Handle recurringInterval conditionally
     if (name === "isRecurring") {
-      if (checked) {
-        updatedTransaction.recurringInterval = "daily"; // or any default value you like
-      } else {
-        delete updatedTransaction.recurringInterval;
-      }
+      updatedTransaction = {
+        ...updatedTransaction,
+        recurringInterval: checked ? "daily" : ""
+      };
     }
   
     setNewTransaction(updatedTransaction);
@@ -134,7 +131,6 @@ function AddTransaction() {
         "http://localhost:8088/api/v1/transactions", 
         {
           ...newTransaction,
-          // Ensure category is sent as ID if it's an object
           category: typeof newTransaction.category === 'object' 
             ? newTransaction.category._id 
             : newTransaction.category
@@ -154,6 +150,11 @@ function AddTransaction() {
         isRecurring: false,
         recurringInterval: ""
       });
+
+      // Notify parent component
+      if (onTransactionAdded) {
+        onTransactionAdded();
+      }
 
       navigate('/transactions');
     } catch (error) {

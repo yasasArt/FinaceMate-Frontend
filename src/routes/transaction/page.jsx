@@ -13,6 +13,22 @@ const TransactionPage = () => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAIExtraction, setShowAIExtraction] = useState(false);
+  const [showReceiptExtraction, setShowReceiptExtraction] = useState(false);
+  const [transactionData, setTransactionData] = useState(null);
+
+  const handleExtractionSuccess = (extractedData) => {
+    // Map the extracted data to your transaction format
+    const mappedData = {
+      transactionType: extractedData.type === 'income' ? 'income' : 'expense',
+      amount: extractedData.amount,
+      description: extractedData.description || extractedData.details || '',
+      date: extractedData.date || new Date().toISOString().split('T')[0],
+      category: extractedData.categoryId || extractedData.category || "",
+    };
+    
+    setTransactionData(mappedData);
+    setShowReceiptExtraction(false);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,15 +104,18 @@ const TransactionPage = () => {
             onChange={(e) => setFilterDate(e.target.value)}
             className="border rounded-md px-3 py-2"
           />
-          <AddTransaction />
+          <AddTransaction initialData={transactionData} onTransactionAdded={() => setTransactionData(null)} />
           {/* <AIReceiptExtraction/> */}
           <button
-            onClick={() => setShowAIExtraction(true)}
+            onClick={() => {
+              setShowAIExtraction(true);
+              setTransactionData(null); // Clear any previous data
+            }}
             className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
           >
-            <FiActivity />
-            <span>AI Extraction</span>
-          </button>
+          <FiActivity />
+          <span>transIt</span>
+        </button>
         </div>
       </div>
 
@@ -184,7 +203,10 @@ const TransactionPage = () => {
       )}
 
       {showAIExtraction && (
-        <AIReceiptExtraction onClose={() => setShowAIExtraction(false)} />
+        <AIReceiptExtraction 
+          onClose={() => setShowAIExtraction(false)}
+          onSuccess={handleExtractionSuccess}
+        />
       )}
     </div>
   );
