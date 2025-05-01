@@ -1,21 +1,43 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import axios from "axios";
+
+axios.defaults.withCredentials = true;
 
 const AddBudgetModal = ({ isOpen, onClose, category, onAddBudget }) => {
   const [newBudget, setNewBudget] = useState({
     limit: "",
-    remainingLimit: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newBudget.limit && category) {
-      onAddBudget({
+    setError(null);
+    
+    if (!newBudget.limit || !category) return;
+
+    setIsLoading(true);
+    
+    try {
+      const response = await axios.post("http://localhost:8088/api/v1/budgets", {
         limit: parseFloat(newBudget.limit),
-        remainingLimit: parseFloat(newBudget.limit),
         category: category._id
       });
-      setNewBudget({ limit: "", remainingLimit: "" });
+
+      // Call the parent component's callback if needed
+      if (onAddBudget) {
+        onAddBudget(response.data.data);
+      }
+      
+      // Reset form and close modal
+      setNewBudget({ limit: "" });
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add budget");
+      console.error("Error adding budget:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -27,12 +49,19 @@ const AddBudgetModal = ({ isOpen, onClose, category, onAddBudget }) => {
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
           onClick={onClose}
+          disabled={isLoading}
         >
           <X size={24} />
         </button>
         <h2 className="text-xl font-bold mb-4">
           Add Budget to {category.name}
         </h2>
+
+        {error && (
+          <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
@@ -42,23 +71,20 @@ const AddBudgetModal = ({ isOpen, onClose, category, onAddBudget }) => {
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="Enter budget limit"
               value={newBudget.limit}
-              onChange={(e) =>
-                setNewBudget({
-                  limit: e.target.value,
-                  remainingLimit: e.target.value,
-                })
-              }
+              onChange={(e) => setNewBudget({ limit: e.target.value })}
               min="0.01"
               step="0.01"
               required
+              disabled={isLoading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors disabled:bg-purple-400"
+            disabled={isLoading}
           >
-            Add Budget
+            {isLoading ? "Adding..." : "Add Budget"}
           </button>
         </form>
       </div>
