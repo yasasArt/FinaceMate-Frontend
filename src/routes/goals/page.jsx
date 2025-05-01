@@ -54,7 +54,7 @@ const GoalsPage = () => {
   // Create new goal
   const handleCreateGoal = async () => {
     try {
-      const response = await axios.post("/goals", newGoal, {
+      const response = await axios.post("http://localhost:8088/api/v1/goals", newGoal, {
         withCredentials: true
       });
       setGoals([...goals, response.data.data]);
@@ -76,7 +76,7 @@ const GoalsPage = () => {
   // Update goal
   const handleUpdateGoal = async (updatedGoal) => {
     try {
-      const response = await axios.patch(`/goals/${updatedGoal._id}`, updatedGoal, {
+      const response = await axios.patch(`http://localhost:8088/api/v1/goals/${updatedGoal._id}`, updatedGoal, {
         withCredentials: true
       });
       setGoals(goals.map(goal => 
@@ -92,7 +92,7 @@ const GoalsPage = () => {
   // Delete goal
   const handleDeleteGoal = async (goalId) => {
     try {
-      await axios.delete(`/goals/${goalId}`, {
+      await axios.delete(`http://localhost:8088/api/v1/goals/${goalId}`, {
         withCredentials: true
       });
       setGoals(goals.filter(goal => goal._id !== goalId));
