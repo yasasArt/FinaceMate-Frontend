@@ -1,8 +1,8 @@
 import React from "react";
-import { ArrowUp, ArrowDown, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowUp, ArrowDown, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
 import BudgetProgress from "./BudgetProgress";
 
-const CategoryCard = ({ category, onClick }) => {
+const CategoryCard = ({ category, onClick, onDelete }) => {
   const getStatus = (category) => {
     if (!category.budget) return null;
     const spent = category.budget.limit - category.budget.remainingLimit;
@@ -34,11 +34,22 @@ const CategoryCard = ({ category, onClick }) => {
             </span>
           </div>
         </div>
-        {category.budget && (
-          <span className="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-medium">
-            Budget Set
-          </span>
-        )}
+        <div className="flex items-center space-x-2">
+          {category.budget && (
+            <span className="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-medium">
+              Budget Set
+            </span>
+          )}
+          <button
+            className="text-red-500 hover:text-red-700 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering onClick for the card
+              onDelete(category.id);
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
       {category.budget && (
