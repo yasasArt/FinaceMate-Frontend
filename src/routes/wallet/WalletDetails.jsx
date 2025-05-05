@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Edit, Save, Trash2 } from "lucide-react";
+import { jsPDF } from "jspdf";
 
 const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -26,6 +27,28 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
   const handleSave = () => {
     onUpdate(editedWallet);
     setIsEditing(false);
+  };
+
+  const handleGenerateReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Wallet Report", 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Wallet Name: ${wallet.name}`, 10, 20);
+    doc.text(`Balance: Rs. ${wallet.balance?.toLocaleString()}`, 10, 30);
+    doc.text(`Remaining Balance: Rs. ${wallet.remainingBalance?.toLocaleString()}`, 10, 40);
+    doc.text("Transactions:", 10, 50);
+
+    transactions.forEach((transaction, index) => {
+      const yPosition = 60 + index * 10;
+      doc.text(
+        `${transaction.date} - ${transaction.description} - ${transaction.category} - Rs. ${transaction.amount}`,
+        10,
+        yPosition
+      );
+    });
+
+    doc.save(`${wallet.name}_report.pdf`);
   };
 
   const balanceDifference = wallet.balance - wallet.remainingBalance;
@@ -265,12 +288,20 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
             <Trash2 size={18} className="mr-2" />
             Delete Wallet
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleGenerateReport}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Generate Report
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
