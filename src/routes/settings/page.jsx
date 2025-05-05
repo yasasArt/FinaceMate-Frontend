@@ -32,6 +32,13 @@ const SettingsPage = () => {
     setNotifications(updated);
   };
 
+  const handleDeleteProfile = () => {
+    if (window.confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
+      setUser({ name: '', email: '' });
+      alert('Profile deleted!');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Arial' }}>
       {/* Sidebar */}
@@ -61,6 +68,7 @@ const SettingsPage = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Profile</h2>
             <p><strong>Name:</strong> {user.name}</p>
             <p><strong>Email:</strong> {user.email}</p>
+            <button onClick={handleDeleteProfile} style={{ ...saveBtnStyle, background: 'red' }}>Delete Profile</button>
           </>
         )}
 
