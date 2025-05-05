@@ -17,7 +17,7 @@ const SettingsPage = () => {
 
   const handleSave = () => {
     // Validate email format
-    //const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       alert('Please enter a valid email address.');
       return;
