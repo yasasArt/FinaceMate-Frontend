@@ -25,13 +25,16 @@ const WalletPage = () => {
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [wallets, setWallets] = useState([]);
   const [selectedView, setSelectedView] = useState("daily");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchWallets = async () => {
       try {
         const response = await axios.get("http://localhost:8088/api/v1/accounts", {
           withCredentials: true,
+         
         });
+       
         setWallets(response.data.data.accounts || []);
       } catch (error) {
         toast.error("Error fetching wallets");
@@ -129,8 +132,28 @@ const WalletPage = () => {
     return dailyData;
   };
 
+  
+
+  //Filter wallets based on serch term
+  const  filterWallers = wallets.filter((wallet=>
+    wallet.accountType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    wallet.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ));
+ 
+
   return (
     <div className="min-h-screen p-6 bg-gray-100">
+
+      {/* Search Bar */}
+      <div className = "mb-4">
+        <input
+          type="text"
+          placeholder="Search by Account Type or Name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+      </div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Wallet Dashboard</h1>
@@ -177,7 +200,7 @@ const WalletPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {wallets.map((wallet) => (
+            {filterWallers.map((wallet) => (
               <div
                 key={wallet._id}
                 onClick={() => handleWalletClick(wallet)}
