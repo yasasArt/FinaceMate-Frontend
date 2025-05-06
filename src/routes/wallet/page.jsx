@@ -266,8 +266,8 @@ const WalletPage = () => {
             <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
           </PieChart>
         </div>
-//       </div>
-// <<<<<<< yasas
+      </div>
+
 
 //       {/* CardDisplay */}
 //       {/* <div className="bg-white p-6 rounded-xl shadow mt-6">
@@ -287,8 +287,8 @@ const WalletPage = () => {
 //           />
 //         </div>
 //       </div> */}
-// =======
-// >>>>>>> main
+
+
     </div>
   );
 };
