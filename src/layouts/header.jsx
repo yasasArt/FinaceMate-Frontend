@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bell, ChevronsLeft, Search, CircleUserRound } from "lucide-react";
+import { Bell, ChevronsLeft, CircleUserRound } from "lucide-react";
 
 import PropTypes from "prop-types";
 import axios from "axios";
@@ -32,19 +32,7 @@ export const Header = ({ collapsed, setCollapsed }) => {
                 >
                     <ChevronsLeft className={collapsed && "rotate-180"} />
                 </button>
-                <div className="input">
-                    <Search
-                        size={20}
-                        className="text-[#7663f0]"
-                    />
-                    <input
-                        type="text"
-                        name="search"
-                        id="search"
-                        placeholder="Search..."
-                        className="w-full bg-transparent text-slate-900 outline-0 placeholder:text-[#9c90eb] dark:text-[#7663f0]"
-                    />
-                </div>
+               
             </div>
             <div className="flex items-center gap-x-3">
                 <button className="btn-ghost size-10">
