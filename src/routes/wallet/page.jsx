@@ -334,7 +334,6 @@ const WalletPage = () => {
                     paddingAngle={2}
                     dataKey="balance"
                     nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
                     labelLine={false}
                   >
                     {wallets.map((wallet, index) => (
@@ -349,7 +348,6 @@ const WalletPage = () => {
                   <Tooltip 
                     formatter={(value, name, props) => [
                       formatCurrency(value),
-                      props.payload.name, // Wallet name
                       `Balance: ${formatCurrency(props.payload.balance)}`
                     ]}
                     contentStyle={{
