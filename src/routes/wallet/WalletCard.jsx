@@ -25,7 +25,7 @@ const WalletCard = ({ wallet, onClick }) => {
         <div className="text-right">
           <span className="text-xs text-gray-500">Balance</span>
           <p className="text-xl font-bold text-gray-800">
-            Rs. {wallet?.balance?.toLocaleString() || '0.00'}
+            Rs. {wallet?.remainingBalance?.toLocaleString() || '0.00'}
           </p>
         </div>
       </div>
