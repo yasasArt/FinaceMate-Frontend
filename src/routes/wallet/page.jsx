@@ -269,7 +269,7 @@ const WalletPage = () => {
       </div>
 
       {/* CardDisplay */}
-      <div className="bg-white p-6 rounded-xl shadow mt-6">
+      {/* <div className="bg-white p-6 rounded-xl shadow mt-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">Saved Cards</h2>
         <div className="flex flex-wrap gap-6">
           <CardDisplay
@@ -285,7 +285,7 @@ const WalletPage = () => {
             expiry="08/25"
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
