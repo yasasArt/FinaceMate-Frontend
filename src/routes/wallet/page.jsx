@@ -266,7 +266,29 @@ const WalletPage = () => {
             <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
           </PieChart>
         </div>
-      </div>
+//       </div>
+// <<<<<<< yasas
+
+//       {/* CardDisplay */}
+//       {/* <div className="bg-white p-6 rounded-xl shadow mt-6">
+//         <h2 className="text-lg font-semibold mb-4 text-gray-800">Saved Cards</h2>
+//         <div className="flex flex-wrap gap-6">
+//           <CardDisplay
+//             cardType="Visa"
+//             cardNumber="4111111111111111"
+//             cardHolder="John Doe"
+//             expiry="12/26"
+//           />
+//           <CardDisplay
+//             cardType="Mastercard"
+//             cardNumber="5555555555554444"
+//             cardHolder="Jane Smith"
+//             expiry="08/25"
+//           />
+//         </div>
+//       </div> */}
+// =======
+// >>>>>>> main
     </div>
   );
 };
