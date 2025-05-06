@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { FaUser, FaCog, FaBell, FaPalette, FaLock, FaTrash, FaCheck, FaChevronRight } from 'react-icons/fa';
+import {
+  FaUser, FaCog, FaBell, FaPalette, FaLock, FaTrash, FaCheck, FaChevronRight,
+} from 'react-icons/fa';
 
 const SettingsPage = () => {
   const [selected, setSelected] = useState('profile');
@@ -40,28 +42,12 @@ const SettingsPage = () => {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      minHeight: '100vh', 
-      fontFamily: "'Inter', sans-serif",
-      backgroundColor: darkMode ? '#1a1a1a' : '#f8f9fa',
-      color: darkMode ? '#ffffff' : '#333333'
-    }}>
+    <div className={`flex min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       {/* Sidebar */}
-      <div style={{ 
-        width: '280px', 
-        background: darkMode ? '#2d2d2d' : '#ffffff', 
-        padding: '1.5rem',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        borderRight: darkMode ? '1px solid #444' : '1px solid #e0e0e0'
-      }}>
-        <h2 style={{
-          fontSize: '1.5rem',
-          fontWeight: '600',
-          marginBottom: '2rem',
-          paddingBottom: '1rem',
-          borderBottom: darkMode ? '1px solid #444' : '1px solid #e0e0e0'
-        }}>Settings</h2>
+      <div className={`w-72 p-6 shadow-md border-r transition-colors duration-300 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <h2 className={`text-2xl font-semibold mb-8 pb-4 border-b transition-colors duration-300 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          Settings
+        </h2>
         <nav>
           <MenuItem 
             icon={<FaUser />} 
@@ -102,62 +88,41 @@ const SettingsPage = () => {
       </div>
 
       {/* Main content */}
-      <div style={{ 
-        flex: 1, 
-        padding: '2rem',
-        backgroundColor: darkMode ? '#1a1a1a' : '#f8f9fa'
-      }}>
+      <div className={`flex-1 p-8 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
         {selected === 'profile' && (
-          <div style={sectionStyle}>
-            <h2 style={headingStyle}>Profile Information</h2>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-semibold mb-4">Profile Information</h2>
+            <div className="flex items-center mb-8">
               <img 
                 src={user.avatar} 
                 alt="Profile" 
-                style={{ 
-                  width: '80px', 
-                  height: '80px', 
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginRight: '1rem',
-                  border: `3px solid ${darkMode ? '#444' : '#e0e0e0'}`
-                }} 
+                className={`w-20 h-20 rounded-full object-cover mr-4 border-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}
               />
               <div>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>{user.name}</h3>
-                <p style={{ color: darkMode ? '#aaa' : '#666' }}>{user.email}</p>
+                <h3 className="text-xl mb-1">{user.name}</h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user.email}</p>
               </div>
             </div>
-            
-            <div style={{ 
-              backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-              marginBottom: '1.5rem'
-            }}>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Personal Details</h3>
-              <div style={detailItemStyle}>
-                <span style={{ color: darkMode ? '#aaa' : '#666', width: '120px' }}>Full Name:</span>
+            <div className={`mb-6 rounded-lg shadow p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className="text-lg mb-4">Personal Details</h3>
+              <div className="flex py-3 border-b last:border-b-0">
+                <span className={`w-32 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Full Name:</span>
                 <span>{user.name}</span>
               </div>
-              <div style={detailItemStyle}>
-                <span style={{ color: darkMode ? '#aaa' : '#666', width: '120px' }}>Email:</span>
+              <div className="flex py-3 border-b last:border-b-0">
+                <span className={`w-32 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Email:</span>
                 <span>{user.email}</span>
               </div>
-              <div style={detailItemStyle}>
-                <span style={{ color: darkMode ? '#aaa' : '#666', width: '120px' }}>Member Since:</span>
+              <div className="flex py-3">
+                <span className={`w-32 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Member Since:</span>
                 <span>January 2023</span>
               </div>
             </div>
-            
-            <button 
-              onClick={handleDeleteProfile} 
-              style={{ 
-                ...dangerButtonStyle,
-                backgroundColor: darkMode ? '#5a1a1a' : '#f8d7da',
-                color: darkMode ? '#ff6b6b' : '#721c24'
-              }}
+            <button
+              onClick={handleDeleteProfile}
+              className={`flex items-center gap-2 px-6 py-3 rounded-md font-medium transition-colors duration-200
+                ${darkMode ? 'bg-red-950 text-red-400 hover:bg-red-900' : 'bg-red-100 text-red-800 hover:bg-red-200'}
+              `}
             >
               <FaTrash /> Delete Account
             </button>
@@ -165,55 +130,40 @@ const SettingsPage = () => {
         )}
 
         {selected === 'account' && (
-          <div style={sectionStyle}>
-            <h2 style={headingStyle}>Account Settings</h2>
-            <p style={{ color: darkMode ? '#aaa' : '#666', marginBottom: '2rem' }}>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-semibold mb-4">Account Settings</h2>
+            <p className={`mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Update your account information and settings
             </p>
-            
-            <div style={{ 
-              backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={labelStyle}>Full Name</label>
+            <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className="mb-6">
+                <label className="block mb-2 font-medium">Full Name</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  style={{
-                    ...inputStyle,
-                    backgroundColor: darkMode ? '#3d3d3d' : '#ffffff',
-                    borderColor: darkMode ? '#444' : '#ddd',
-                    color: darkMode ? '#fff' : '#333'
-                  }}
+                  className={`block w-full px-4 py-3 rounded-md border transition-colors duration-200
+                    ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                 />
               </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={labelStyle}>Email Address</label>
+              <div className="mb-6">
+                <label className="block mb-2 font-medium">Email Address</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  style={{
-                    ...inputStyle,
-                    backgroundColor: darkMode ? '#3d3d3d' : '#ffffff',
-                    borderColor: darkMode ? '#444' : '#ddd',
-                    color: darkMode ? '#fff' : '#333'
-                  }}
+                  className={`block w-full px-4 py-3 rounded-md border transition-colors duration-200
+                    ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                 />
               </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button 
-                  onClick={handleSave} 
-                  style={{
-                    ...primaryButtonStyle,
-                    backgroundColor: darkMode ? '#4a6bff' : '#405cf5'
-                  }}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSave}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-md font-medium text-white transition-colors duration-200
+                    ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}
+                  `}
                 >
                   <FaCheck /> Save Changes
                 </button>
@@ -223,44 +173,26 @@ const SettingsPage = () => {
         )}
 
         {selected === 'notifications' && (
-          <div style={sectionStyle}>
-            <h2 style={headingStyle}>Notifications</h2>
-            <p style={{ color: darkMode ? '#aaa' : '#666', marginBottom: '2rem' }}>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-semibold mb-4">Notifications</h2>
+            <p className={`mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Manage your notification preferences
             </p>
-            
-            <div style={{ 
-              backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-            }}>
+            <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               {notifications.length === 0 ? (
-                <p style={{ textAlign: 'center', color: darkMode ? '#aaa' : '#666' }}>
+                <p className={`text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   No notifications to display.
                 </p>
               ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
+                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                   {notifications.map((note, idx) => (
-                    <li key={idx} style={{ 
-                      padding: '1rem',
-                      borderBottom: darkMode ? '1px solid #444' : '1px solid #eee',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
+                    <li key={idx} className="flex justify-between items-center py-4">
                       <span>{note}</span>
                       <button
                         onClick={() => handleDeleteNotification(idx)}
-                        style={{ 
-                          background: 'none',
-                          border: 'none',
-                          color: darkMode ? '#ff6b6b' : '#dc3545',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
+                        className={`flex items-center gap-2 text-sm font-medium transition-colors
+                          ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-800'}
+                        `}
                       >
                         <FaTrash /> Dismiss
                       </button>
@@ -273,68 +205,43 @@ const SettingsPage = () => {
         )}
 
         {selected === 'appearance' && (
-          <div style={sectionStyle}>
-            <h2 style={headingStyle}>Appearance</h2>
-            <p style={{ color: darkMode ? '#aaa' : '#666', marginBottom: '2rem' }}>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-semibold mb-4">Appearance</h2>
+            <p className={`mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Customize the look and feel of the application
             </p>
-            
-            <div style={{ 
-              backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '1.5rem'
-              }}>
+            <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Dark Mode</h3>
-                  <p style={{ color: darkMode ? '#aaa' : '#666', fontSize: '0.9rem' }}>
+                  <h3 className="text-lg mb-1">Dark Mode</h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     Switch between light and dark theme
                   </p>
                 </div>
-                <label style={switchStyle}>
-                  <input 
-                    type="checkbox" 
-                    checked={darkMode} 
-                    onChange={() => setDarkMode(!darkMode)} 
-                  />
-                  <span style={{
-                    ...sliderStyle,
-                    backgroundColor: darkMode ? '#4a6bff' : '#ccc'
-                  }}></span>
+                {/* Toggle Switch */}
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={darkMode} onChange={() => setDarkMode(!darkMode)} className="sr-only peer" />
+                  <div className={`w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-gray-700
+                    ${darkMode ? 'bg-blue-600' : ''}
+                  `}></div>
+                  <div className={`absolute left-1 top-1 bg-white border border-gray-300 h-6 w-6 rounded-full transition-transform
+                    ${darkMode ? 'translate-x-6' : ''}
+                  `}></div>
                 </label>
               </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Theme Color</h3>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className="mb-6">
+                <h3 className="text-lg mb-4">Theme Color</h3>
+                <div className="flex gap-4">
                   {['#405cf5', '#4CAF50', '#9C27B0', '#FF5722', '#607D8B'].map(color => (
-                    <div 
+                    <div
                       key={color}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: color,
-                        cursor: 'pointer',
-                        border: color === '#405cf5' ? '2px solid #fff' : 'none',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                      }}
+                      className="w-10 h-10 rounded-full cursor-pointer border-2 border-white shadow"
+                      style={{ backgroundColor: color }}
                     />
                   ))}
                 </div>
               </div>
-              
-              <p style={{ 
-                color: darkMode ? '#aaa' : '#666', 
-                fontSize: '0.9rem',
-                fontStyle: 'italic'
-              }}>
+              <p className={`text-sm italic ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 More appearance options coming soon!
               </p>
             </div>
@@ -342,18 +249,12 @@ const SettingsPage = () => {
         )}
 
         {selected === 'security' && (
-          <div style={sectionStyle}>
-            <h2 style={headingStyle}>Security</h2>
-            <p style={{ color: darkMode ? '#aaa' : '#666', marginBottom: '2rem' }}>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-semibold mb-4">Security</h2>
+            <p className={`mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Manage your account security settings
             </p>
-            
-            <div style={{ 
-              backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-            }}>
+            <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <SecurityItem 
                 title="Change Password" 
                 description="Update your current password"
@@ -387,138 +288,44 @@ const SettingsPage = () => {
 const MenuItem = ({ icon, title, active, onClick, darkMode }) => (
   <button 
     onClick={onClick}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-      padding: '0.75rem 1rem',
-      marginBottom: '0.5rem',
-      background: active ? (darkMode ? '#3d3d3d' : '#f0f0f0') : 'transparent',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      color: darkMode ? '#ffffff' : '#333333',
-      transition: 'all 0.2s ease',
-      fontWeight: active ? '600' : '400'
-    }}
+    className={`
+      flex items-center justify-between w-full px-4 py-3 mb-2 rounded-md transition-colors
+      ${active ? (darkMode ? 'bg-gray-700 font-semibold' : 'bg-gray-100 font-semibold') : ''}
+      ${darkMode ? 'text-white hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-200'}
+    `}
   >
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-      <span style={{ color: active ? (darkMode ? '#4a6bff' : '#405cf5') : (darkMode ? '#aaa' : '#666') }}>
+    <div className="flex items-center gap-3">
+      <span className={active ? (darkMode ? 'text-blue-400' : 'text-blue-600') : (darkMode ? 'text-gray-400' : 'text-gray-500')}>
         {icon}
       </span>
       <span>{title}</span>
     </div>
-    <FaChevronRight style={{ fontSize: '0.8rem', opacity: 0.7 }} />
+    <FaChevronRight className="text-xs opacity-70" />
   </button>
 );
 
 const SecurityItem = ({ title, description, darkMode, enabled }) => (
-  <div style={{ 
-    padding: '1rem',
-    borderBottom: darkMode ? '1px solid #444' : '1px solid #eee',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  }}>
+  <div className={`flex justify-between items-center py-4 border-b last:border-b-0 transition-colors
+    ${darkMode ? 'border-gray-700' : 'border-gray-200'}
+  `}>
     <div>
-      <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{title}</h3>
-      <p style={{ color: darkMode ? '#aaa' : '#666', fontSize: '0.85rem' }}>{description}</p>
+      <h3 className="text-base mb-1">{title}</h3>
+      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{description}</p>
     </div>
     {enabled !== undefined ? (
-      <span style={{ 
-        padding: '0.25rem 0.75rem',
-        borderRadius: '20px',
-        backgroundColor: enabled ? (darkMode ? '#1a3e1a' : '#d4edda') : (darkMode ? '#3d3d3d' : '#f8f9fa'),
-        color: enabled ? (darkMode ? '#6bd96b' : '#28a745') : (darkMode ? '#aaa' : '#666'),
-        fontSize: '0.8rem',
-        border: darkMode ? '1px solid #444' : '1px solid #ddd'
-      }}>
+      <span className={`
+        px-3 py-1 rounded-full text-xs font-medium border transition-colors
+        ${enabled
+          ? (darkMode ? 'bg-green-900 text-green-300 border-green-700' : 'bg-green-100 text-green-700 border-green-200')
+          : (darkMode ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-gray-100 text-gray-600 border-gray-200')
+        }
+      `}>
         {enabled ? 'Enabled' : 'Disabled'}
       </span>
     ) : (
-      <FaChevronRight style={{ color: darkMode ? '#aaa' : '#666', fontSize: '0.8rem' }} />
+      <FaChevronRight className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
     )}
   </div>
 );
-
-// Styles
-const sectionStyle = {
-  maxWidth: '800px',
-  margin: '0 auto'
-};
-
-const headingStyle = {
-  fontSize: '1.8rem',
-  fontWeight: '600',
-  marginBottom: '1rem'
-};
-
-const labelStyle = {
-  display: 'block',
-  marginBottom: '0.5rem',
-  fontWeight: '500'
-};
-
-const inputStyle = {
-  display: 'block',
-  width: '100%',
-  padding: '0.75rem',
-  borderRadius: '6px',
-  border: '1px solid #ddd',
-  fontSize: '1rem',
-  transition: 'border-color 0.2s ease'
-};
-
-const primaryButtonStyle = {
-  padding: '0.75rem 1.5rem',
-  borderRadius: '6px',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '1rem',
-  fontWeight: '500',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  color: '#ffffff',
-  transition: 'all 0.2s ease'
-};
-
-const dangerButtonStyle = {
-  padding: '0.75rem 1.5rem',
-  borderRadius: '6px',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '1rem',
-  fontWeight: '500',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  transition: 'all 0.2s ease'
-};
-
-const detailItemStyle = {
-  display: 'flex',
-  padding: '0.75rem 0',
-  borderBottom: '1px solid #eee'
-};
-
-const switchStyle = {
-  position: 'relative',
-  display: 'inline-block',
-  width: '60px',
-  height: '34px'
-};
-
-const sliderStyle = {
-  position: 'absolute',
-  cursor: 'pointer',
-  top: '0',
-  left: '0',
-  right: '0',
-  bottom: '0',
-  transition: '.4s',
-  borderRadius: '34px'
-};
 
 export default SettingsPage;
