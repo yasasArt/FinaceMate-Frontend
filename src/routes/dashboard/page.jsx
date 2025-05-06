@@ -146,7 +146,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="card col-span-1 md:col-span-2 lg:col-span-3">
                     <div className="card-header">
-                        <p className="card-title">Budget</p>
+                        <p className="card-title">Categories</p>
                     </div>
                     <div className="card-body h-[300px] overflow-auto p-0">
                         {recentSalesData.map((sale) => (
