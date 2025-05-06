@@ -4,18 +4,18 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
   AreaChart,
   Area,
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
+  ReferenceArea,
 } from "recharts";
 import { PlusCircle } from "lucide-react";
 import WalletFormPopup from "./WalletFormPopup";
 import WalletCard from "./WalletCard";
 import WalletDetailsPopup from "./WalletDetails";
+import CardDisplay from "./CardDisplay";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -25,12 +25,11 @@ const WalletPage = () => {
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [wallets, setWallets] = useState([]);
   const [selectedView, setSelectedView] = useState("daily");
-
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        setIsLoading(true);
         const response = await axios.get("http://localhost:8088/api/v1/accounts", {
           withCredentials: true,
          
@@ -41,8 +40,6 @@ const WalletPage = () => {
         toast.error("Error fetching wallets");
         console.error("Error fetching wallets:", error);
         setWallets([]);
-      } finally {
-        setIsLoading(false);
       }
     };
     fetchWallets();
@@ -93,97 +90,46 @@ const WalletPage = () => {
     }
   };
 
-  // Generate chart data based on wallets
-  const generatePieData = () => {
-    if (wallets.length === 0) return [];
-    
-    // Group by wallet type
-    const typeMap = new Map();
-    wallets.forEach(wallet => {
-      const type = wallet.type || 'Other';
-      const balance = wallet.remainingBalance || 0;
-      if (typeMap.has(type)) {
-        typeMap.set(type, typeMap.get(type) + balance);
-      } else {
-        typeMap.set(type, balance);
-      }
-    });
-    
-    return Array.from(typeMap.entries()).map(([name, value]) => ({
-      name,
-      value: parseFloat(value.toFixed(2))
-    }));
-  };
-
-  // Generate balance history data (simplified - in a real app you'd get this from API)
-  const generateBalanceHistory = () => {
-    const today = new Date();
-    const data = [];
-    
-    if (selectedView === "daily") {
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-        
-        // Calculate total balance for the day (simplified - would normally come from API)
-        const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.95 + Math.random() * 0.1); // Add some variation
-        }, 0);
-        
-        data.push({
-          date: dayName,
-          balance: parseFloat(totalBalance.toFixed(2))
-        });
-      }
-    } else if (selectedView === "monthly") {
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(today);
-        date.setMonth(date.getMonth() - i);
-        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-        
-        const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.9 + Math.random() * 0.2);
-        }, 0);
-        
-        data.push({
-          date: monthName,
-          balance: parseFloat(totalBalance.toFixed(2))
-        });
-      }
-    } else { // yearly
-      for (let i = 4; i >= 0; i--) {
-        const year = today.getFullYear() - i;
-        
-        const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.8 + Math.random() * 0.4);
-        }, 0);
-        
-        data.push({
-          date: year.toString(),
-          balance: parseFloat(totalBalance.toFixed(2))
-        });
-      }
-    }
-    
-    return data;
-  };
-
-  const COLORS = [
-    '#6366F1', '#EC4899', '#22C55E', '#F97316', 
-    '#EAB308', '#14B8A6', '#3B82F6', '#8B5CF6'
+  const dailyData = [
+    { day: "Mon", balance: 1200 },
+    { day: "Tue", balance: 1350 },
+    { day: "Wed", balance: 1400 },
+    { day: "Thu", balance: 1250 },
+    { day: "Fri", balance: 1500 },
+    { day: "Sat", balance: 1600 },
+    { day: "Sun", balance: 1580 },
   ];
 
-  const pieData = generatePieData();
-  const balanceHistory = generateBalanceHistory();
+  const monthlyData = [
+    { day: "Jan", balance: 12000 },
+    { day: "Feb", balance: 13500 },
+    { day: "Mar", balance: 14200 },
+    { day: "Apr", balance: 12800 },
+    { day: "May", balance: 15200 },
+    { day: "Jun", balance: 16000 },
+  ];
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
+  const yearlyData = [
+    { day: "2020", balance: 40000 },
+    { day: "2021", balance: 55000 },
+    { day: "2022", balance: 62000 },
+    { day: "2023", balance: 71000 },
+    { day: "2024", balance: 78500 },
+  ];
+
+  const pieData = [
+    { name: "Bitcoin (BTC)", value: 24 },
+    { name: "Ethereum (ETH)", value: 18 },
+    { name: "Shard (SHARD)", value: 32 },
+    { name: "Binance (BNB)", value: 22 },
+  ];
+
+  const COLORS = ["#6366F1", "#EC4899", "#22C55E", "#F97316", "#EAB308"];
+
+  const getChartData = () => {
+    if (selectedView === "monthly") return monthlyData;
+    if (selectedView === "yearly") return yearlyData;
+    return dailyData;
   };
 
   
@@ -196,15 +142,26 @@ const WalletPage = () => {
  
 
   return (
+    <div className="min-h-screen p-6 bg-gray-100">
 
+      {/* Search Bar */}
+      <div className = "mb-4">
+        <input
+          type="text"
+          placeholder="Search by Account Type or Name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+      </div>
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Wallet Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">Wallet Dashboard</h1>
         <button
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors w-full md:w-auto justify-center"
+          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           onClick={() => setShowFormPopup(true)}
         >
-          <PlusCircle className="mr-2 h-5 w-5" />
+          <PlusCircle className="mr-2" />
           Add Wallet
         </button>
       </div>
@@ -231,13 +188,7 @@ const WalletPage = () => {
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">Your Wallets</h2>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white p-4 rounded-xl shadow h-32 animate-pulse"></div>
-            ))}
-          </div>
-        ) : wallets.length === 0 ? (
+        {wallets.length === 0 ? (
           <div className="bg-white p-6 rounded-xl shadow text-center">
             <p className="text-gray-500">No wallets added yet.</p>
             <button
@@ -253,7 +204,7 @@ const WalletPage = () => {
               <div
                 key={wallet._id}
                 onClick={() => handleWalletClick(wallet)}
-                className="cursor-pointer hover:transform hover:scale-[1.02] transition-transform"
+                className="cursor-pointer"
               >
                 <WalletCard wallet={wallet} />
               </div>
@@ -262,145 +213,104 @@ const WalletPage = () => {
         )}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        {/* Wallet Balance Chart */}
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Wallet Balance History ({selectedView.charAt(0).toUpperCase() + selectedView.slice(1)})
-            </h2>
-            <select
-              value={selectedView}
-              onChange={(e) => setSelectedView(e.target.value)}
-              className="border border-gray-300 px-3 py-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="daily">Daily</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={balanceHistory}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="balanceColor" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <YAxis 
-                  tickFormatter={(value) => `Rs. ${value.toLocaleString()}`}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [formatCurrency(value), 'Balance']}
-                  labelFormatter={(label) => `Date: ${label}`}
-                  contentStyle={{
-                    background: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="#6366F1"
-                  fill="url(#balanceColor)"
-                  strokeWidth={2}
-                  name="Balance"
-                  activeDot={{ r: 6, stroke: '#4338CA', strokeWidth: 2, fill: '#ffffff' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Wallet Balance Chart */}
+      <div className="bg-white p-6 rounded-xl shadow w-full mt-8 overflow-x-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Wallet Balance ({selectedView.charAt(0).toUpperCase() + selectedView.slice(1)})
+          </h2>
+          <select
+            value={selectedView}
+            onChange={(e) => setSelectedView(e.target.value)}
+            className="border px-3 py-1 rounded-md text-sm"
+          >
+            <option value="daily">Daily</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
         </div>
 
-        {/* Wallet Distribution Pie Chart */}
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Wallet Balances</h2>
-          <div className="h-64 w-full">
-            {wallets.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={wallets}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="balance"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                    labelLine={false}
-                  >
-                    {wallets.map((wallet, index) => (
-                      <Cell
-                        key={`cell-${wallet._id}`}
-                        fill={COLORS[index % COLORS.length]}
-                        stroke="#ffffff"
-                        strokeWidth={1}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value, name, props) => [
-                      formatCurrency(value),
-                      props.payload.name, // Wallet name
-                      `Balance: ${formatCurrency(props.payload.balance)}`
-                    ]}
-                    contentStyle={{
-                      background: '#ffffff',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.5rem',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Legend 
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    height={36}
-                    formatter={(value, entry, index) => wallets[index]?.name || value}
-                    wrapperStyle={{
-                      paddingTop: '20px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                {isLoading ? 'Loading...' : 'No wallets available'}
-              </div>
-            )}
-          </div>
+        <AreaChart
+          width={Math.min(window.innerWidth - 50, 900)}
+          height={400}
+          data={getChartData()}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <ReferenceArea y1={0} y2={1199} strokeOpacity={0} fill="#fee2e2" fillOpacity={0.3} />
+          <ReferenceArea y1={1200} y2={1399} strokeOpacity={0} fill="#fef9c3" fillOpacity={0.3} />
+          <ReferenceArea y1={1400} y2={99999} strokeOpacity={0} fill="#dcfce7" fillOpacity={0.3} />
+
+          <defs>
+            <linearGradient id="balanceColor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#4115ed" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#4115ed" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="day" />
+          <YAxis />
+          <Tooltip />
+          <Area
+            type="monotone"
+            dataKey="balance"
+            stroke="#4115ed"
+            fill="url(#balanceColor)"
+            strokeWidth={2}
+            name="Balance"
+            activeDot={{ r: 6 }}
+          />
+        </AreaChart>
+      </div>
+
+      {/* Wallet Pie Chart */}
+      <div className="bg-white p-6 rounded-xl shadow mt-8">
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">My Wallet</h2>
+        <div className="h-[300px] flex justify-center items-center">
+          <PieChart width={600} height={300}>
+            <Pie
+              data={pieData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              fill="#8884d8"
+              paddingAngle={2}
+              dataKey="value"
+              label={({ name, value }) => `${name} (${value}%)`}
+            >
+              {pieData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
+          </PieChart>
         </div>
       </div>
 
-      {/* Total Balance Card */}
-      {wallets.length > 0 && (
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow mt-6 text-white">
-          <h2 className="text-lg font-medium mb-2">Total Balance</h2>
-          <p className="text-3xl font-bold">
-            {formatCurrency(wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0))}
-          </p>
-          <p className="text-indigo-100 mt-2">
-            Across {wallets.length} wallet{wallets.length !== 1 ? 's' : ''}
-          </p>
-        </div>
+
+//       {/* CardDisplay */}
+//       {/* <div className="bg-white p-6 rounded-xl shadow mt-6">
+//         <h2 className="text-lg font-semibold mb-4 text-gray-800">Saved Cards</h2>
+//         <div className="flex flex-wrap gap-6">
+//           <CardDisplay
+//             cardType="Visa"
+//             cardNumber="4111111111111111"
+//             cardHolder="John Doe"
+//             expiry="12/26"
+//           />
+//           <CardDisplay
+//             cardType="Mastercard"
+//             cardNumber="5555555555554444"
+//             cardHolder="Jane Smith"
+//             expiry="08/25"
+//           />
+//         </div>
+//       </div> */}
+
 
     </div>
   );
