@@ -26,6 +26,7 @@ const WalletPage = () => {
   const [wallets, setWallets] = useState([]);
   const [selectedView, setSelectedView] = useState("daily");
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchWallets = async () => {
@@ -184,6 +185,37 @@ const WalletPage = () => {
     }).format(value);
   };
 
+  // Filter wallets based on search term
+  const filteredWallets = wallets.filter((wallet) => 
+    wallet.accountType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    wallet.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen p-4 md:p-6 bg-gray-100">
+      {/* Header and Search Bar */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">Wallet Dashboard</h1>
+          <button
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors w-full md:w-auto justify-center"
+            onClick={() => setShowFormPopup(true)}
+          >
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Add Wallet
+          </button>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="w-full">
+          <input
+            type="text"
+            placeholder="Search by Account Type or Name"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
       </div>
 
       {/* Form Popup */}
@@ -214,6 +246,7 @@ const WalletPage = () => {
               <div key={i} className="bg-white p-4 rounded-xl shadow h-32 animate-pulse"></div>
             ))}
           </div>
+        ) : filteredWallets.length === 0 ? (
           <div className="bg-white p-6 rounded-xl shadow text-center">
             <p className="text-gray-500">
               {searchTerm ? "No matching wallets found" : "No wallets added yet."}
@@ -227,6 +260,7 @@ const WalletPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredWallets.map((wallet) => (
               <div
                 key={wallet._id}
                 onClick={() => handleWalletClick(wallet)}
@@ -291,6 +325,16 @@ const WalletPage = () => {
                     borderRadius: '0.5rem',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="balance"
+                  stroke="#6366F1"
+                  fill="url(#balanceColor)"
+                  strokeWidth={2}
+                  name="Balance"
+                  activeDot={{ r: 6, stroke: '#4338CA', strokeWidth: 2, fill: '#ffffff' }}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
