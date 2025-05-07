@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import GoalCard from "./GoalCard";
-import { FaPlus, FaTrophy, FaChevronDown, FaTimes, FaPiggyBank } from "react-icons/fa";
+import { FaPlus, FaTrophy, FaChevronDown, FaTimes, FaPiggyBank, FaSearch } from "react-icons/fa";
 import axios from "axios";
 import GoalDetailsModal from "./GoalDetailsModal";
 
@@ -20,6 +20,7 @@ const GoalsPage = () => {
     account: ""
   });
   const [showCompletedGoals, setShowCompletedGoals] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch goals and accounts from backend
   const fetchData = async () => {
@@ -103,8 +104,14 @@ const GoalsPage = () => {
     }
   };
 
-  const ongoingGoals = goals.filter(goal => goal.goalStatus === "ongoing");
-  const completedGoals = goals.filter(goal => goal.goalStatus === "completed");
+  // Filter goals based on search term
+  const filteredGoals = goals.filter(goal => 
+    goal.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    goal.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const ongoingGoals = filteredGoals.filter(goal => goal.goalStatus === "ongoing");
+  const completedGoals = filteredGoals.filter(goal => goal.goalStatus === "completed");
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -116,20 +123,44 @@ const GoalsPage = () => {
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Financial Goals</h1>
-            <p className="text-gray-500 mt-1">
-              {ongoingGoals.length} active, {completedGoals.length} completed
-            </p>
+        {/* Header and Search Bar */}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Financial Goals</h1>
+              <p className="text-gray-500 mt-1">
+                {ongoingGoals.length} active, {completedGoals.length} completed
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-md hover:shadow-lg"
+            >
+              <FaPlus /> New Goal
+            </button>
           </div>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-md hover:shadow-lg"
-          >
-            <FaPlus /> New Goal
-          </button>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaSearch className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by Goal Name or Description"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <FaTimes className="text-gray-400 hover:text-gray-600" />
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -152,12 +183,14 @@ const GoalsPage = () => {
                   <div className="text-gray-400 mb-3">
                     <FaPiggyBank size={32} className="mx-auto" />
                   </div>
-                  <p className="text-gray-500 mb-4">You don't have any active goals yet.</p>
+                  <p className="text-gray-500 mb-4">
+                    {searchTerm ? "No matching goals found" : "You don't have any active goals yet."}
+                  </p>
                   <button 
                     onClick={() => setShowCreateModal(true)}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Create your first goal →
+                    {searchTerm ? "Clear search" : "Create your first goal →"}
                   </button>
                 </div>
               ) : (
@@ -195,7 +228,7 @@ const GoalsPage = () => {
                 <div className="bg-white rounded-b-lg shadow-sm">
                   {completedGoals.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
-                      No completed goals yet
+                      {searchTerm ? "No matching completed goals" : "No completed goals yet"}
                     </div>
                   ) : (
                     <ul className="divide-y divide-gray-200">
