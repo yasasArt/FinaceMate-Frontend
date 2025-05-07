@@ -184,18 +184,6 @@ const WalletPage = () => {
     }).format(value);
   };
 
-  return (
-    <div className="min-h-screen p-4 md:p-6 bg-gray-100">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Wallet Dashboard</h1>
-        <button
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors w-full md:w-auto justify-center"
-          onClick={() => setShowFormPopup(true)}
-        >
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Add Wallet
-        </button>
       </div>
 
       {/* Form Popup */}
@@ -226,19 +214,19 @@ const WalletPage = () => {
               <div key={i} className="bg-white p-4 rounded-xl shadow h-32 animate-pulse"></div>
             ))}
           </div>
-        ) : wallets.length === 0 ? (
           <div className="bg-white p-6 rounded-xl shadow text-center">
-            <p className="text-gray-500">No wallets added yet.</p>
+            <p className="text-gray-500">
+              {searchTerm ? "No matching wallets found" : "No wallets added yet."}
+            </p>
             <button
               onClick={() => setShowFormPopup(true)}
               className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
-              Create Your First Wallet
+              {searchTerm ? "Clear search" : "Create Your First Wallet"}
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {wallets.map((wallet) => (
               <div
                 key={wallet._id}
                 onClick={() => handleWalletClick(wallet)}
@@ -303,16 +291,6 @@ const WalletPage = () => {
                     borderRadius: '0.5rem',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="#6366F1"
-                  fill="url(#balanceColor)"
-                  strokeWidth={2}
-                  name="Balance"
-                  activeDot={{ r: 6, stroke: '#4338CA', strokeWidth: 2, fill: '#ffffff' }}
-                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
