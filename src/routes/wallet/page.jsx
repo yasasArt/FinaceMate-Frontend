@@ -35,7 +35,7 @@ const WalletPage = () => {
         const response = await axios.get("http://localhost:8088/api/v1/accounts", {
           withCredentials: true,
         });
-        setWallets(response.data.data.accounts || []);
+        setWallets(response.data?.data?.accounts || []);
       } catch (error) {
         toast.error("Error fetching wallets");
         console.error("Error fetching wallets:", error);
@@ -50,6 +50,8 @@ const WalletPage = () => {
   const handleSaveWallet = (newWallet) => {
     setWallets((prev) => [...prev, newWallet]);
     setShowFormPopup(false);
+    toast.success("Wallet added successfully!");
+    alert("New wallet has been added successfully!"); // Popup message
   };
 
   const handleWalletClick = (wallet) => {
@@ -66,7 +68,7 @@ const WalletPage = () => {
       );
       setWallets((prevWallets) =>
         prevWallets.map((w) =>
-          w._id === updatedWallet._id ? response.data.data : w
+          w._id === updatedWallet._id ? response.data?.data : w
         )
       );
       setShowDetailsPopup(false);
@@ -94,13 +96,13 @@ const WalletPage = () => {
 
   // Generate chart data based on wallets
   const generatePieData = () => {
-    if (wallets.length === 0) return [];
+    if (!wallets || wallets.length === 0) return [];
     
-    // Group by wallet type
     const typeMap = new Map();
     wallets.forEach(wallet => {
-      const type = wallet.type || 'Other';
-      const balance = wallet.remainingBalance || 0;
+      if (!wallet) return;
+      const type = wallet.type || wallet.accountType || 'Other';
+      const balance = wallet.balance || wallet.remainingBalance || 0;
       if (typeMap.has(type)) {
         typeMap.set(type, typeMap.get(type) + balance);
       } else {
@@ -114,8 +116,10 @@ const WalletPage = () => {
     }));
   };
 
-  // Generate balance history data (simplified - in a real app you'd get this from API)
+  // Generate balance history data
   const generateBalanceHistory = () => {
+    if (!wallets || wallets.length === 0) return [];
+    
     const today = new Date();
     const data = [];
     
@@ -125,9 +129,8 @@ const WalletPage = () => {
         date.setDate(date.getDate() - i);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         
-        // Calculate total balance for the day (simplified - would normally come from API)
         const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.95 + Math.random() * 0.1); // Add some variation
+          return sum + ((wallet?.balance || 0) * (0.95 + Math.random() * 0.1));
         }, 0);
         
         data.push({
@@ -142,7 +145,7 @@ const WalletPage = () => {
         const monthName = date.toLocaleDateString('en-US', { month: 'short' });
         
         const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.9 + Math.random() * 0.2);
+          return sum + ((wallet?.balance || 0) * (0.9 + Math.random() * 0.2));
         }, 0);
         
         data.push({
@@ -155,7 +158,7 @@ const WalletPage = () => {
         const year = today.getFullYear() - i;
         
         const totalBalance = wallets.reduce((sum, wallet) => {
-          return sum + (wallet.balance || 0) * (0.8 + Math.random() * 0.4);
+          return sum + ((wallet?.balance || 0) * (0.8 + Math.random() * 0.4));
         }, 0);
         
         data.push({
@@ -182,13 +185,13 @@ const WalletPage = () => {
       currency: 'LKR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(value);
+    }).format(value || 0);
   };
 
   // Filter wallets based on search term
   const filteredWallets = wallets.filter((wallet) => 
-    wallet.accountType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    wallet.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    wallet?.accountType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    wallet?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -262,7 +265,7 @@ const WalletPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredWallets.map((wallet) => (
               <div
-                key={wallet._id}
+                key={wallet?._id || Math.random()}
                 onClick={() => handleWalletClick(wallet)}
                 className="cursor-pointer hover:transform hover:scale-[1.02] transition-transform"
               >
@@ -293,50 +296,60 @@ const WalletPage = () => {
           </div>
 
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={balanceHistory}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="balanceColor" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : wallets.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                No wallet data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={balanceHistory}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="balanceColor" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <YAxis 
-                  tickFormatter={(value) => `Rs. ${value.toLocaleString()}`}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [formatCurrency(value), 'Balance']}
-                  labelFormatter={(label) => `Date: ${label}`}
-                  contentStyle={{
-                    background: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="#6366F1"
-                  fill="url(#balanceColor)"
-                  strokeWidth={2}
-                  name="Balance"
-                  activeDot={{ r: 6, stroke: '#4338CA', strokeWidth: 2, fill: '#ffffff' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `Rs. ${value?.toLocaleString() || 0}`}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [formatCurrency(value), 'Balance']}
+                    labelFormatter={(label) => `Date: ${label}`}
+                    contentStyle={{
+                      background: '#ffffff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.5rem',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="balance"
+                    stroke="#6366F1"
+                    fill="url(#balanceColor)"
+                    strokeWidth={2}
+                    name="Balance"
+                    activeDot={{ r: 6, stroke: '#4338CA', strokeWidth: 2, fill: '#ffffff' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -344,23 +357,31 @@ const WalletPage = () => {
         <div className="bg-white p-4 md:p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">Wallet Balances</h2>
           <div className="h-64 w-full">
-            {wallets.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : pieData.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                No wallet data available
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={wallets}
+                    data={pieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={90}
                     paddingAngle={2}
-                    dataKey="balance"
+                    dataKey="value"
                     nameKey="name"
                     labelLine={false}
                   >
-                    {wallets.map((wallet, index) => (
+                    {pieData.map((entry, index) => (
                       <Cell
-                        key={`cell-${wallet._id}`}
+                        key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
                         stroke="#ffffff"
                         strokeWidth={1}
@@ -368,10 +389,7 @@ const WalletPage = () => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name, props) => [
-                      formatCurrency(value),
-                      `Balance: ${formatCurrency(props.payload.balance)}`
-                    ]}
+                    formatter={(value) => [formatCurrency(value), 'Balance']}
                     contentStyle={{
                       background: '#ffffff',
                       border: '1px solid #e5e7eb',
@@ -383,17 +401,13 @@ const WalletPage = () => {
                     layout="horizontal"
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value, entry, index) => wallets[index]?.name || value}
+                    formatter={(value) => value}
                     wrapperStyle={{
                       paddingTop: '20px'
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                {isLoading ? 'Loading...' : 'No wallets available'}
-              </div>
             )}
           </div>
         </div>
@@ -404,7 +418,9 @@ const WalletPage = () => {
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow mt-6 text-white">
           <h2 className="text-lg font-medium mb-2">Total Balance</h2>
           <p className="text-3xl font-bold">
-            {formatCurrency(wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0))}
+            {formatCurrency(
+              wallets.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0)
+            )}
           </p>
           <p className="text-indigo-100 mt-2">
             Across {wallets.length} wallet{wallets.length !== 1 ? 's' : ''}
