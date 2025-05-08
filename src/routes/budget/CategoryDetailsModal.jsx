@@ -67,6 +67,7 @@ const CategoryDetailsModal = ({
   const handleCategoryDelete = async () => {
     try {
       setIsLoading(true);
+      window.location.reload();
       await axios.delete(
         `http://127.0.0.1:8088/api/v1/categories/${category._id}`
       );
@@ -89,6 +90,7 @@ const CategoryDetailsModal = ({
   const handleCategoryUpdate = async () => {
     try {
       setIsLoading(true);
+      window.location.reload();
       const response = await axios.patch(
         `http://127.0.0.1:8088/api/v1/categories/${category._id}`,
         {
@@ -108,6 +110,7 @@ const CategoryDetailsModal = ({
   const handleBudgetUpdate = async () => {
     try {
       setIsLoading(true);
+      window.location.reload();
       const response = await axios.patch(
         `http://127.0.0.1:8088/api/v1/budgets/${budget._id}`,
         {
@@ -128,6 +131,7 @@ const CategoryDetailsModal = ({
     
     try {
       setIsLoading(true);
+      window.location.reload();
       await axios.delete(
         `http://127.0.0.1:8088/api/v1/budgets/${budget._id}`
       );
