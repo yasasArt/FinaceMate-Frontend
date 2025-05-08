@@ -69,9 +69,13 @@ const CategoryPage = () => {
   // Handle adding a new category
   const handleAddCategory = async (categoryData) => {
     try {
-      const response = await axios.post("http://localhost:8088/api/v1/categories", categoryData);
+      const response = await axios.post(
+      "http://localhost:8088/api/v1/categories", 
+      categoryData
+    );
       setCategories([...categories, response.data.data]);
       setIsAddCategoryModalOpen(false);
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     }
