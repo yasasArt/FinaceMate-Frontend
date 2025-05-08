@@ -5,6 +5,8 @@ import CategoryCard from "./CategoryCard";
 import AddCategoryModal from "./AddCategoryModal";
 import CategoryDetailsModal from "./CategoryDetailsModal";
 import AddBudgetModal from "./AddBudgetModal";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable"; // Use this exact import for v3+
 
 axios.defaults.withCredentials = true;
 
@@ -49,6 +51,21 @@ const CategoryPage = () => {
     }
   }, [searchTerm, categories]);
 
+  const handleGeneratePDF = () => {
+    const doc = new jsPDF();
+    doc.text("Categories Report", 14, 15);
+  
+    let y = 25;
+  
+    categories.forEach((cat) => {
+      const line = `• Name: ${cat.name}, Description: ${cat.description || "N/A"}, Type: ${cat.type}, On Track: ${cat.onTrack ? "Yes" : "No"}`;
+      doc.text(line, 14, y);
+      y += 10;
+    });
+  
+    doc.save("Budget-report.pdf");
+  };
+
   // Handle adding a new category
   const handleAddCategory = async (categoryData) => {
     try {
@@ -69,6 +86,7 @@ const CategoryPage = () => {
   // Handle adding a budget to a category
   const handleAddBudget = async (budgetData) => {
     try {
+      window.location.reload();
       // Add budget
       await axios.post("api/v1/budgets", budgetData);
       
@@ -86,7 +104,8 @@ const CategoryPage = () => {
     }
   };
 
-  if (loading) return (
+  if (loading) 
+    return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
     </div>
@@ -137,6 +156,13 @@ const CategoryPage = () => {
             </button>
           </div>
         </div>
+
+        <button
+          onClick={handleGeneratePDF}
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"
+        >
+          Download PDF
+        </button>
 
         {filteredCategories.length === 0 ? (
           <div className="bg-white p-8 rounded-xl shadow-sm text-center border-2 border-dashed border-gray-200">
