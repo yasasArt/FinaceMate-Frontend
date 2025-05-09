@@ -100,43 +100,124 @@ const TransactionPage = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    let y = 20; // Start vertical position
-
-    doc.setFontSize(18);
-    doc.text("Transaction Report", 14, 15);
-    doc.setFontSize(12);
-
-    filteredTransactions.forEach((tx, index) => {
-      doc.text(`Transaction ${index + 1}:`, 14, y);
-      y += 7;
-      doc.text(`Date: ${new Date(tx.date).toLocaleDateString()}`, 14, y);
-      y += 7;
-      doc.text(`Type: ${tx.transactionType}`, 14, y);
-      y += 7;
-      doc.text(`Amount: ${tx.amount}`, 14, y);
-      y += 7;
-      doc.text(`Category: ${tx.category?.name || "-"}`, 14, y);
-      y += 7;
-      doc.text(`Wallet: ${tx.account?.slug || "-"}`, 14, y);
-      y += 7;
-      doc.text(`Status: ${tx.transactionStatus}`, 14, y);
-      y += 7;
-      doc.text(
-        `Recurring: ${tx.isRecurring ? tx.recurringInterval : "No"}`,
-        14,
-        y
-      );
-      y += 10; // Extra space before next transaction
-
-      // Avoid writing off the page
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
+    
+    // Set document properties
+    doc.setProperties({
+        title: 'Transaction Report',
+        subject: 'Financial Transactions',
+        author: 'Your Finance App',
+        keywords: 'transactions, finance, report',
+        creator: 'Your Finance App'
     });
 
-    doc.save("transactions.pdf");
-  };
+    // Add header with logo and title
+    doc.setFontSize(20);
+    doc.setTextColor(40, 53, 147);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transaction Report', 105, 20, { align: 'center' });
+    
+    // Add date of report generation
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 30, { align: 'center' });
+    
+    // Add summary section
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, 45);
+    
+    // Calculate summary statistics
+    const totalTransactions = filteredTransactions.length;
+    const totalIncome = filteredTransactions
+        .filter(tx => tx.transactionType === 'income')
+        .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpenses = filteredTransactions
+        .filter(tx => tx.transactionType === 'expense')
+        .reduce((sum, tx) => sum + tx.amount, 0);
+    const netBalance = totalIncome - totalExpenses;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Transactions: ${totalTransactions}`, 14, 55);
+    doc.text(`Total Income: $${totalIncome.toFixed(2)}`, 14, 65);
+    doc.text(`Total Expenses: $${totalExpenses.toFixed(2)}`, 14, 75);
+    doc.setTextColor(netBalance >= 0 ? 0 : 150, 0, 0); // Remove the extra commas
+    doc.text(`Net Balance: $${netBalance.toFixed(2)}`, 14, 85);
+    
+    // Add transaction details section
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(40, 53, 147);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transaction Details', 105, 20, { align: 'center' });
+    
+    let y = 30;
+    const leftCol = 14;
+    const rightCol = 110;
+    
+    filteredTransactions.forEach((tx, index) => {
+        // Transaction header
+        doc.setFontSize(12);
+        doc.setTextColor(40, 53, 147);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transaction #${index + 1}`, leftCol, y);
+        
+        // Add colored box for transaction type
+        const typeColor = tx.transactionType === 'income' ? [46, 125, 50] : [198, 40, 40];
+        doc.setFillColor(...typeColor);
+        doc.roundedRect(rightCol, y - 5, 30, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.text(tx.transactionType.toUpperCase(), rightCol + 15, y, { align: 'center' });
+        
+        // Transaction details
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        y += 10;
+        
+        // Left column details
+        doc.text(`Date: ${new Date(tx.date).toLocaleDateString()}`, leftCol, y);
+        doc.text(`Amount: $${tx.amount.toFixed(2)}`, leftCol, y + 7);
+        doc.text(`Wallet: ${tx.account?.slug || "-"}`, leftCol, y + 14);
+        
+        // Right column details
+        doc.text(`Category: ${tx.category?.name || "-"}`, rightCol, y);
+        doc.text(`Status: ${tx.transactionStatus}`, rightCol, y + 7);
+        doc.text(`Recurring: ${tx.isRecurring ? tx.recurringInterval : "No"}`, rightCol, y + 14);
+        
+        // Description (full width)
+        if (tx.description) {
+            const splitDesc = doc.splitTextToSize(`Description: ${tx.description}`, 180);
+            doc.text(splitDesc, leftCol, y + 21);
+            y += 7 * splitDesc.length;
+        }
+        
+        y += 30; // Space between transactions
+        
+        // Add horizontal divider
+        doc.setDrawColor(200);
+        doc.line(leftCol, y - 10, 200, y - 10);
+        
+        // Check for page break
+        if (y > 270) {
+            doc.addPage();
+            y = 20;
+        }
+    });
+    
+    // Add footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: 'center' });
+        doc.text('Confidential - Your Finance App', 200, 287, { align: 'right' });
+    }
+    
+    doc.save(`Transaction_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+};
 
   return (
     <div className="p-6">
