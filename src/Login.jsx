@@ -66,10 +66,31 @@ const Login = () => {
 
     try {
       const resultFromGoogle = await signInWithPopup(auth, provider);
-      // console.log(resultFromGoogle);
-      const result = await axios.post(`http://127.0.0.1:8088/api/v1/users/google-login`, {
-        token : resultFromGoogle._tokenRes
-      });
+      const result = await axios.post(
+        `http://127.0.0.1:8088/api/v1/users/google`, 
+        {
+          uid : resultFromGoogle.user.uid,
+          name: resultFromGoogle.user.displayName,
+          email: resultFromGoogle.user.email,
+          googlePhotoURL: resultFromGoogle.user.photoURL,
+        },
+        { withCredentials: true } // Allows cookies to be sent
+      );
+
+      console.log(result);
+
+      console.log(`Google login response: ${result.data.status}`);
+
+      if (result.data.status === "success") {
+        setCookie("authToken", result.data.token, {
+          path: "/",
+          secure: false,
+          sameSite: "Strict",
+        });
+  
+        toast.success("Login successful");
+        navigate("/");
+      }
       
     } catch (error) {
       console.error("Google sign-in error:", error);
