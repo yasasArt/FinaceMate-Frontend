@@ -1,20 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Edit, Save, Trash2 } from "lucide-react";
 import { jsPDF } from "jspdf";
+import axios from "axios";
 
 const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedWallet, setEditedWallet] = useState({ ...wallet });
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   if (!wallet) return null;
 
-  // Sample transaction data - replace with your actual data
-  const transactions = [
-    { id: 1, date: "2023-05-15", description: "Grocery Store", amount: -125.50, category: "Food", type: "expense" },
-    { id: 2, date: "2023-05-14", description: "Salary Deposit", amount: 2500.00, category: "Income", type: "income" },
-    { id: 3, date: "2023-05-12", description: "Electric Bill", amount: -85.75, category: "Utilities", type: "expense" },
-    { id: 4, date: "2023-05-10", description: "Restaurant", amount: -45.30, category: "Dining", type: "expense" },
-  ];
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:8088/api/v1/accounts/${wallet._id}/transactions`
+        );
+        console.log("Transactions response:", response.data.data.transactions);
+        setTransactions(response.data.data.transactions);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+        setError("Failed to load transactions. Please try again.");
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (wallet._id) {
+      fetchTransactions();
+    }
+  }, [wallet._id]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -38,16 +58,16 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
     doc.text(`Balance: Rs. ${wallet.balance?.toLocaleString()}`, 10, 30);
     doc.text(`Remaining Balance: Rs. ${wallet.remainingBalance?.toLocaleString()}`, 10, 40);
     doc.text("Transactions:", 10, 50);
-
+  
     transactions.forEach((transaction, index) => {
       const yPosition = 60 + index * 10;
       doc.text(
-        `${transaction.date} - ${transaction.description} - ${transaction.category} - Rs. ${transaction.amount}`,
+        `${new Date(transaction.date).toLocaleDateString()} - ${transaction.description} - ${transaction.category?.name || 'Uncategorized'} - Rs. ${transaction.amount}`,
         10,
         yPosition
       );
     });
-
+  
     doc.save(`${wallet.name}_report.pdf`);
   };
 
@@ -234,7 +254,21 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
               </button>
             </div>
             
-            {transactions.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                <p>Loading transactions...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                <p className="text-red-500">{error}</p>
+                <button 
+                  className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : transactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -247,7 +281,7 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {transactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50">
+                      <tr key={transaction._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(transaction.date).toLocaleDateString()}
                         </td>
@@ -255,12 +289,12 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
                           {transaction.description}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                          {transaction.category}
+                          {transaction.category?.name || 'Uncategorized'}
                         </td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                          transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {transaction.type === 'income' ? '+' : '-'}
+                          {transaction.transactionType === 'income' ? '+' : '-'}
                           Rs. {Math.abs(transaction.amount).toFixed(2)}
                         </td>
                       </tr>
@@ -292,6 +326,7 @@ const WalletDetailsPopup = ({ wallet, onClose, onUpdate, onDelete }) => {
             <button
               onClick={handleGenerateReport}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              disabled={loading || error}
             >
               Generate Report
             </button>
