@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import AddTransaction from "./AddTransaction";
 import TransactionDetailsPopup from "./TransactionDetailsPopup";
-import { FiActivity, FiSearch, FiX } from "react-icons/fi";
+import { FiActivity, FiSearch, FiX, FiDownload } from "react-icons/fi";
 import AIReceiptExtraction from "./AIReceiptExtraction";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 axios.defaults.withCredentials = true;
 
@@ -18,7 +20,6 @@ const TransactionPage = () => {
   const [transactionData, setTransactionData] = useState(null);
 
   const handleExtractionSuccess = (extractedData) => {
-    // Map the extracted data to your transaction format
     const mappedData = {
       transactionType: extractedData.type === 'income' ? 'income' : 'expense',
       amount: extractedData.amount,
@@ -26,7 +27,7 @@ const TransactionPage = () => {
       date: extractedData.date || new Date().toISOString().split('T')[0],
       category: extractedData.categoryId || extractedData.category || "",
     };
-    
+
     setTransactionData(mappedData);
     setShowReceiptExtraction(false);
   };
@@ -35,8 +36,7 @@ const TransactionPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        const transactionsData = await axios.get("http://127.0.0.1:8088/api/v1/transactions",{
+        const transactionsData = await axios.get("http://127.0.0.1:8088/api/v1/transactions", {
           withCredentials: true,
         });
 
@@ -66,7 +66,7 @@ const TransactionPage = () => {
         await axios.delete(`http://127.0.0.1:8088/api/v1/transactions/${id}`, {
           withCredentials: true,
         });
-        setTransactions(transactions.filter((tx) => tx._id !== id));  // Use _id here
+        setTransactions(transactions.filter((tx) => tx._id !== id));
         setSelectedTransaction(null);
       } catch (error) {
         console.error("Error deleting transaction:", error);
@@ -83,14 +83,110 @@ const TransactionPage = () => {
     setSelectedTransaction(updatedTransaction);
   };
 
+  const generatePDF = () => {
+    if (filteredTransactions.length === 0) {
+      alert("No transactions to generate report");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Transaction Report", 14, 22);
+    doc.setFont("helvetica", "normal");
+    
+    // Filters info
+    doc.setFontSize(10);
+    let filtersText = "All Transactions";
+    if (filterDate) filtersText = `Transactions for ${filterDate}`;
+    if (searchTerm) filtersText += filterDate ? ` containing "${searchTerm}"` : `Transactions containing "${searchTerm}"`;
+    doc.text(filtersText, 14, 30);
+    
+    // Report generation date
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 38);
+    
+    // Table data with proper formatting
+    const tableData = filteredTransactions.map(tx => [
+      tx.date ? new Date(tx.date).toLocaleDateString() : "-",
+      tx.transactionType ? tx.transactionType.charAt(0).toUpperCase() + tx.transactionType.slice(1) : "-",
+      tx.amount !== undefined ? `$${tx.amount.toFixed(2)}` : "-",
+      tx.description || "-",
+      tx.category?.name || "-",
+      tx.account?.name || tx.account?.slug || "-",
+      tx.transactionStatus || "-",
+      tx.isRecurring ? tx.recurringInterval || "Yes" : "No"
+    ]);
+
+    // AutoTable
+    doc.autoTable({
+      head: [["Date", "Type", "Amount", "Description", "Category", "Wallet", "Status", "Recurring"]],
+      body: tableData,
+      startY: 45,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: "linebreak"
+      },
+      headStyles: { 
+        fillColor: [103, 58, 183],
+        textColor: 255,
+        fontStyle: "bold"
+      },
+      alternateRowStyles: { 
+        fillColor: [240, 240, 240] 
+      },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 15 }
+      }
+    });
+
+    // Calculate totals
+    const totalCount = filteredTransactions.length;
+    const totalIncome = filteredTransactions
+      .filter(tx => tx.transactionType === "income")
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const totalExpense = filteredTransactions
+      .filter(tx => tx.transactionType === "expense")
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+    const finalY = doc.lastAutoTable.finalY || 45;
+    doc.setFontSize(10);
+    doc.text(`Total Transactions: ${totalCount}`, 14, finalY + 10);
+    doc.text(`Total Income: $${totalIncome.toFixed(2)}`, 14, finalY + 16);
+    doc.text(`Total Expense: $${totalExpense.toFixed(2)}`, 14, finalY + 22);
+    doc.text(`Net Balance: $${(totalIncome - totalExpense).toFixed(2)}`, 14, finalY + 28);
+
+    // Save with fallback
+    try {
+      doc.save(`Transaction_Report_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (e) {
+      const pdfBlob = doc.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = `Transaction_Report_${new Date().toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
+    }
+  };
+
   const filteredTransactions = transactions.filter((tx) => {
-    // Apply date filter if set
     if (filterDate) {
       const txDate = new Date(tx.date).toISOString().split('T')[0];
       if (txDate !== filterDate) return false;
     }
-    
-    // Apply search term filter if set
+
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -101,7 +197,7 @@ const TransactionPage = () => {
         (tx.transactionType?.toLowerCase().includes(searchLower))
       );
     }
-    
+
     return true;
   });
 
@@ -119,12 +215,19 @@ const TransactionPage = () => {
             <button
               onClick={() => {
                 setShowAIExtraction(true);
-                setTransactionData(null); // Clear any previous data
+                setTransactionData(null);
               }}
               className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
             >
               <FiActivity />
               <span>transIt</span>
+            </button>
+            <button
+              onClick={generatePDF}
+              className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+            >
+              <FiDownload />
+              <span>Generate PDF</span>
             </button>
           </div>
         </div>
