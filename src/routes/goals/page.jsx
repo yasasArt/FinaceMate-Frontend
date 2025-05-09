@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import GoalCard from "./GoalCard";
-import { FaPlus, FaTrophy, FaChevronDown, FaTimes, FaPiggyBank, FaSearch } from "react-icons/fa";
+import { FaDownload } from "react-icons/fa";
+import jsPDF from "jspdf";
+
+import {
+  FaPlus,
+  FaTrophy,
+  FaChevronDown,
+  FaTimes,
+  FaPiggyBank,
+  FaSearch,
+} from "react-icons/fa";
 import axios from "axios";
 import GoalDetailsModal from "./GoalDetailsModal";
 
@@ -17,7 +27,7 @@ const GoalsPage = () => {
     totalAmount: 0,
     contributionAmount: 0,
     contributionInterval: "monthly",
-    account: ""
+    account: "",
   });
   const [showCompletedGoals, setShowCompletedGoals] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,19 +36,25 @@ const GoalsPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch goals
-      const goalsResponse = await axios.get("http://localhost:8088/api/v1/goals", {
-        withCredentials: true
-      });
+      const goalsResponse = await axios.get(
+        "http://localhost:8088/api/v1/goals",
+        {
+          withCredentials: true,
+        }
+      );
       setGoals(goalsResponse.data.data.goals);
-      
+
       // Fetch accounts
-      const accountsResponse = await axios.get("http://localhost:8088/api/v1/accounts", {
-        withCredentials: true
-      });
+      const accountsResponse = await axios.get(
+        "http://localhost:8088/api/v1/accounts",
+        {
+          withCredentials: true,
+        }
+      );
       setAccounts(accountsResponse.data.data.accounts);
-      
+
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch data");
@@ -55,9 +71,13 @@ const GoalsPage = () => {
   // Create new goal
   const handleCreateGoal = async () => {
     try {
-      const response = await axios.post("http://localhost:8088/api/v1/goals", newGoal, {
-        withCredentials: true
-      });
+      const response = await axios.post(
+        "http://localhost:8088/api/v1/goals",
+        newGoal,
+        {
+          withCredentials: true,
+        }
+      );
       setGoals([...goals, response.data.data]);
       setShowCreateModal(false);
       setNewGoal({
@@ -66,7 +86,7 @@ const GoalsPage = () => {
         totalAmount: 0,
         contributionAmount: 0,
         contributionInterval: "monthly",
-        account: ""
+        account: "",
       });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create goal");
@@ -77,12 +97,18 @@ const GoalsPage = () => {
   // Update goal
   const handleUpdateGoal = async (updatedGoal) => {
     try {
-      const response = await axios.patch(`http://localhost:8088/api/v1/goals/${updatedGoal._id}`, updatedGoal, {
-        withCredentials: true
-      });
-      setGoals(goals.map(goal => 
-        goal._id === updatedGoal._id ? response.data.data : goal
-      ));
+      const response = await axios.patch(
+        `http://localhost:8088/api/v1/goals/${updatedGoal._id}`,
+        updatedGoal,
+        {
+          withCredentials: true,
+        }
+      );
+      setGoals(
+        goals.map((goal) =>
+          goal._id === updatedGoal._id ? response.data.data : goal
+        )
+      );
       setSelectedGoal(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update goal");
@@ -94,9 +120,9 @@ const GoalsPage = () => {
   const handleDeleteGoal = async (goalId) => {
     try {
       await axios.delete(`http://localhost:8088/api/v1/goals/${goalId}`, {
-        withCredentials: true
+        withCredentials: true,
       });
-      setGoals(goals.filter(goal => goal._id !== goalId));
+      setGoals(goals.filter((goal) => goal._id !== goalId));
       setSelectedGoal(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete goal");
@@ -105,13 +131,53 @@ const GoalsPage = () => {
   };
 
   // Filter goals based on search term
-  const filteredGoals = goals.filter(goal => 
-    goal.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    goal.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredGoals = goals.filter(
+    (goal) =>
+      goal.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      goal.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const ongoingGoals = filteredGoals.filter(goal => goal.goalStatus === "ongoing");
-  const completedGoals = filteredGoals.filter(goal => goal.goalStatus === "completed");
+  const ongoingGoals = filteredGoals.filter(
+    (goal) => goal.goalStatus === "ongoing"
+  );
+  const completedGoals = filteredGoals.filter(
+    (goal) => goal.goalStatus === "completed"
+  );
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("My Financial Goals", 14, 22);
+    doc.setFontSize(12);
+
+    let y = 32;
+
+    goals.forEach((goal, index) => {
+      doc.text(`${index + 1}. ${goal.name}`, 14, y);
+      y += 6;
+      doc.text(`   Description: ${goal.description || "N/A"}`, 14, y);
+      y += 6;
+      doc.text(`   Target: $${goal.totalAmount.toFixed(2)}`, 14, y);
+      y += 6;
+      doc.text(
+        `   Contribution: $${goal.contributionAmount.toFixed(2)} (${
+          goal.contributionInterval
+        })`,
+        14,
+        y
+      );
+      y += 6;
+      doc.text(`   Status: ${goal.goalStatus}`, 14, y);
+      y += 10;
+
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+    });
+
+    doc.save("financial_goals.pdf");
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8">
@@ -127,19 +193,27 @@ const GoalsPage = () => {
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Financial Goals</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                My Financial Goals
+              </h1>
               <p className="text-gray-500 mt-1">
                 {ongoingGoals.length} active, {completedGoals.length} completed
               </p>
             </div>
-            <button 
+            <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-md hover:shadow-lg"
             >
               <FaPlus /> New Goal
             </button>
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors shadow-md hover:shadow-lg"
+            >
+              <FaDownload /> Download PDF
+            </button>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -177,16 +251,18 @@ const GoalsPage = () => {
                   {ongoingGoals.length}
                 </span>
               </h2>
-              
+
               {ongoingGoals.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl shadow-sm text-center border-2 border-dashed border-gray-200">
                   <div className="text-gray-400 mb-3">
                     <FaPiggyBank size={32} className="mx-auto" />
                   </div>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm ? "No matching goals found" : "You don't have any active goals yet."}
+                    {searchTerm
+                      ? "No matching goals found"
+                      : "You don't have any active goals yet."}
                   </p>
-                  <button 
+                  <button
                     onClick={() => setShowCreateModal(true)}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
@@ -195,10 +271,10 @@ const GoalsPage = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {ongoingGoals.map(goal => (
-                    <GoalCard 
-                      key={goal._id} 
-                      goal={goal} 
+                  {ongoingGoals.map((goal) => (
+                    <GoalCard
+                      key={goal._id}
+                      goal={goal}
                       onClick={() => setSelectedGoal(goal)}
                     />
                   ))}
@@ -208,7 +284,7 @@ const GoalsPage = () => {
 
             {/* Completed goals section */}
             <div className="lg:w-80">
-              <div 
+              <div
                 className="flex items-center justify-between cursor-pointer p-3 bg-white rounded-t-lg shadow-sm border-b border-gray-200"
                 onClick={() => setShowCompletedGoals(!showCompletedGoals)}
               >
@@ -219,22 +295,26 @@ const GoalsPage = () => {
                     {completedGoals.length}
                   </span>
                 </h2>
-                <FaChevronDown 
-                  className={`text-gray-400 transition-transform ${showCompletedGoals ? 'transform rotate-180' : ''}`}
+                <FaChevronDown
+                  className={`text-gray-400 transition-transform ${
+                    showCompletedGoals ? "transform rotate-180" : ""
+                  }`}
                 />
               </div>
-              
+
               {showCompletedGoals && (
                 <div className="bg-white rounded-b-lg shadow-sm">
                   {completedGoals.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
-                      {searchTerm ? "No matching completed goals" : "No completed goals yet"}
+                      {searchTerm
+                        ? "No matching completed goals"
+                        : "No completed goals yet"}
                     </div>
                   ) : (
                     <ul className="divide-y divide-gray-200">
-                      {completedGoals.map(goal => (
-                        <li 
-                          key={goal._id} 
+                      {completedGoals.map((goal) => (
+                        <li
+                          key={goal._id}
                           className="p-3 hover:bg-gray-50 cursor-pointer transition-colors group"
                           onClick={() => setSelectedGoal(goal)}
                         >
@@ -252,7 +332,10 @@ const GoalsPage = () => {
                             </span>
                           </div>
                           <div className="mt-2 flex justify-between text-xs text-gray-400">
-                            <span>Created: {new Date(goal.createdAt).toLocaleDateString()}</span>
+                            <span>
+                              Created:{" "}
+                              {new Date(goal.createdAt).toLocaleDateString()}
+                            </span>
                             <span>Click to view</span>
                           </div>
                         </li>
@@ -270,49 +353,68 @@ const GoalsPage = () => {
           <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Create New Goal</h2>
-                <button 
+                <h2 className="text-xl font-bold text-gray-800">
+                  Create New Goal
+                </h2>
+                <button
                   onClick={() => setShowCreateModal(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <FaTimes size={20} />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Goal Name*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Goal Name*
+                  </label>
                   <input
                     type="text"
                     value={newGoal.name}
-                    onChange={(e) => setNewGoal({...newGoal, name: e.target.value})}
+                    onChange={(e) =>
+                      setNewGoal({ ...newGoal, name: e.target.value })
+                    }
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g. New Laptop"
                     required
                     autoFocus
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description (Optional)
+                  </label>
                   <textarea
                     value={newGoal.description}
-                    onChange={(e) => setNewGoal({...newGoal, description: e.target.value})}
+                    onChange={(e) =>
+                      setNewGoal({ ...newGoal, description: e.target.value })
+                    }
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows="2"
                     placeholder="Short description..."
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Target Amount*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Target Amount*
+                    </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-400">$</span>
+                      <span className="absolute left-3 top-2.5 text-gray-400">
+                        $
+                      </span>
                       <input
                         type="number"
                         value={newGoal.totalAmount}
-                        onChange={(e) => setNewGoal({...newGoal, totalAmount: parseFloat(e.target.value) || 0})}
+                        onChange={(e) =>
+                          setNewGoal({
+                            ...newGoal,
+                            totalAmount: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="w-full p-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         min="0"
                         step="0.01"
@@ -320,15 +422,24 @@ const GoalsPage = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contribution*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contribution*
+                    </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-400">$</span>
+                      <span className="absolute left-3 top-2.5 text-gray-400">
+                        $
+                      </span>
                       <input
                         type="number"
                         value={newGoal.contributionAmount}
-                        onChange={(e) => setNewGoal({...newGoal, contributionAmount: parseFloat(e.target.value) || 0})}
+                        onChange={(e) =>
+                          setNewGoal({
+                            ...newGoal,
+                            contributionAmount: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="w-full p-2 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         min="0"
                         step="0.01"
@@ -337,13 +448,20 @@ const GoalsPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Frequency*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frequency*
+                    </label>
                     <select
                       value={newGoal.contributionInterval}
-                      onChange={(e) => setNewGoal({...newGoal, contributionInterval: e.target.value})}
+                      onChange={(e) =>
+                        setNewGoal({
+                          ...newGoal,
+                          contributionInterval: e.target.value,
+                        })
+                      }
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="daily">Daily</option>
@@ -351,17 +469,21 @@ const GoalsPage = () => {
                       <option value="monthly">Monthly</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account*
+                    </label>
                     <select
                       value={newGoal.account}
-                      onChange={(e) => setNewGoal({...newGoal, account: e.target.value})}
+                      onChange={(e) =>
+                        setNewGoal({ ...newGoal, account: e.target.value })
+                      }
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     >
                       <option value="">Select Account</option>
-                      {accounts.map(account => (
+                      {accounts.map((account) => (
                         <option key={account._id} value={account._id}>
                           {account.name} (${account.balance.toFixed(2)})
                         </option>
@@ -370,18 +492,23 @@ const GoalsPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-                <button 
+                <button
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleCreateGoal}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                  disabled={!newGoal.name || !newGoal.totalAmount || !newGoal.contributionAmount || !newGoal.account}
+                  disabled={
+                    !newGoal.name ||
+                    !newGoal.totalAmount ||
+                    !newGoal.contributionAmount ||
+                    !newGoal.account
+                  }
                 >
                   Create Goal
                 </button>
