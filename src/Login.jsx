@@ -5,8 +5,8 @@ import { ToastContainer, toast } from "react-toastify";
 import { Mail, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import axios from "axios";
 import {useCookies} from 'react-cookie';
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../src/firebase";
+import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
+import { app } from "./firebase"; 
 
 const API_URL = import.meta.env.REACT_APP_BACKEND_URL;
 
@@ -17,6 +17,7 @@ const Login = () => {
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [cookie, setCookie] = useCookies(["authToken"]);
   const [loading, setLoading] = useState(false);
+  const auth = getAuth(app);
 
   
   const navigate = useNavigate();
@@ -60,43 +61,40 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-  
-    try {
-      setLoading(true);
-      
-      // Sign in with Google
-      const result = await signInWithPopup(auth, provider);
-      console.log("Google User: ", result.user); // Debugging check
-  
-      // ✅ Get Firebase ID Token
-      // const idToken = await result.user.getIdToken(true);
-      // console.log("Firebase ID Token:", idToken);
 
-      const uid = result.user.uid;
-  
-      // ✅ Send ID token to backend (correct variable)
-      const response = await axios.post("http://127.0.0.1:8088/api/v1/users/google", {
-        uid: uid, // ✅ Fix: Send the correct variable
-      });
-  
-      if (response.data && response.data.token) {
-        setCookie("authToken", response.data.token, {
+    provider.setCustomParameters({prompt: "select_account"});
+
+    try {
+      const resultFromGoogle = await signInWithPopup(auth, provider);
+      const result = await axios.post(
+        `http://127.0.0.1:8088/api/v1/users/google`, 
+        {
+          uid : resultFromGoogle.user.uid,
+          name: resultFromGoogle.user.displayName,
+          email: resultFromGoogle.user.email,
+          googlePhotoURL: resultFromGoogle.user.photoURL,
+        },
+        { withCredentials: true } // Allows cookies to be sent
+      );
+
+      console.log(result);
+
+      console.log(`Google login response: ${result.data.status}`);
+
+      if (result.data.status === "success") {
+        setCookie("authToken", result.data.token, {
           path: "/",
-          secure: true,
+          secure: false,
           sameSite: "Strict",
         });
   
-        toast.success("Google Sign-In successful!");
+        toast.success("Login successful");
         navigate("/");
-      } else {
-        console.error("Unexpected response format:", response.data);
-        toast.error("Login failed: Invalid server response.");
       }
+      
     } catch (error) {
-      console.error("Google Sign-In failed: ", error.message);
-      toast.error("Google Sign-In failed!");
-    } finally {
-      setLoading(false);
+      console.error("Google sign-in error:", error);
+      toast.error("Google sign-in failed");
     }
   };
 
