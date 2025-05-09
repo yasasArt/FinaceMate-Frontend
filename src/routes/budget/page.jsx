@@ -1,310 +1,225 @@
-import React, { useState } from "react";
-import {
-  MoreHorizontal,
-  Edit2,
-  CheckCircle,
-  AlertCircle,
-  X,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Search, X } from "lucide-react";
+import axios from "axios";
+import CategoryCard from "./CategoryCard";
+import AddCategoryModal from "./AddCategoryModal";
+import CategoryDetailsModal from "./CategoryDetailsModal";
+import AddBudgetModal from "./AddBudgetModal";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable"; // Use this exact import for v3+
 
-const Budgetpage = () => {
-  const [budgets, setBudgets] = useState([
-    {
-      category: "Food & Groceries",
-      spent: 487,
-      budget: 650,
-      status: "on-track",
-    },
-    {
-      category: "Cafe & Restaurants",
-      spent: 1270,
-      budget: 2100,
-      status: "on-track",
-    },
-    {
-      category: "Health & Beauty",
-      spent: 235,
-      budget: 500,
-      status: "on-track",
-    },
-    {
-      category: "Traveling",
-      spent: 350,
-      budget: 400,
-      status: "need-attention",
-    },
-    {
-      category: "Investments",
-      spent: 200,
-      budget: 600,
-      status: "on-track",
-    },
-    {
-      category: "Entertainment",
-      spent: 150,
-      budget: 1500,
-      status: "on-track",
-    },
-  ]);
+axios.defaults.withCredentials = true;
 
+const CategoryPage = () => {
+  const [categories, setCategories] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [isCategoryDetailsOpen, setIsCategoryDetailsOpen] = useState(false);
   const [isAddBudgetModalOpen, setIsAddBudgetModalOpen] = useState(false);
-  const [newBudget, setNewBudget] = useState({
-    category: "",
-    budget: "",
-    spent: 0,
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [isSetLimitModalOpen, setIsSetLimitModalOpen] = useState(false);
-  const [limitCategory, setLimitCategory] = useState("");
-  const [newLimit, setNewLimit] = useState("");
+  // Fetch categories from backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get("http://localhost:8088/api/v1/categories");
+        setCategories(response.data.data.categories);
+        setFilteredCategories(response.data.data.categories);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
 
-  const categories = [
-    "Food & Groceries",
-    "Cafe & Restaurants",
-    "Health & Beauty",
-    "Traveling",
-    "Investments",
-    "Entertainment",
-    "Utilities",
-    "Shopping",
-    "Transportation",
-  ];
+    fetchCategories();
+  }, []);
 
-  const getStatusColor = (status) => {
-    return status === "on-track" ? "text-green-500" : "text-orange-500";
+  // Filter categories based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter((category) =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredCategories(filtered);
+    }
+  }, [searchTerm, categories]);
+
+  const handleGeneratePDF = () => {
+    const doc = new jsPDF();
+    doc.text("Categories Report", 14, 15);
+  
+    let y = 25;
+  
+    categories.forEach((cat) => {
+      const line = `• Name: ${cat.name}, Description: ${cat.description || "N/A"}, Type: ${cat.type}, On Track: ${cat.onTrack ? "Yes" : "No"}`;
+      doc.text(line, 14, y);
+      y += 10;
+    });
+  
+    doc.save("Budget-report.pdf");
   };
 
-  const calculatePercentage = (spent, budget) => {
-    return Math.round((spent / budget) * 100);
-  };
-
-  const handleAddBudget = () => {
-    if (newBudget.category && newBudget.budget) {
-      const budgetToAdd = {
-        ...newBudget,
-        budget: parseFloat(newBudget.budget),
-        status: "on-track",
-      };
-      setBudgets([...budgets, budgetToAdd]);
-      setNewBudget({ category: "", budget: "", spent: 0 });
-      setIsAddBudgetModalOpen(false);
+  // Handle adding a new category
+  const handleAddCategory = async (categoryData) => {
+    try {
+      const response = await axios.post(
+      "http://localhost:8088/api/v1/categories", 
+      categoryData
+    );
+      setCategories([...categories, response.data.data]);
+      setIsAddCategoryModalOpen(false);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
-  const handleSetLimit = () => {
-    const updatedBudgets = budgets.map((budget) =>
-      budget.category === limitCategory
-        ? { ...budget, budget: parseFloat(newLimit) }
-        : budget
-    );
-    setBudgets(updatedBudgets);
-    setIsSetLimitModalOpen(false);
+  // Handle opening category details
+  const openCategoryDetails = (category) => {
+    setSelectedCategory(category);
+    setIsCategoryDetailsOpen(true);
   };
 
-  const totalBudget = budgets.reduce((acc, curr) => acc + curr.budget, 0);
-  const totalSpent = budgets.reduce((acc, curr) => acc + curr.spent, 0);
+  // Handle adding a budget to a category
+  const handleAddBudget = async (budgetData) => {
+    try {
+      window.location.reload();
+      // Add budget
+      await axios.post("api/v1/budgets", budgetData);
+      
+      // Update category's onTrack status
+      await axios.patch(`api/v1/categories/${budgetData.category}`, {
+        onTrack: true
+      });
 
+      // Refresh categories
+      const response = await axios.get("api/v1/categories");
+      setCategories(response.data.data);
+      setIsAddBudgetModalOpen(false);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-  {/* Set Budget Limit Modal */}
-  {isSetLimitModalOpen && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96 relative">
-        <button
-          className="absolute top-4 right-4 text-gray-500"
-          onClick={() => setIsSetLimitModalOpen(false)}
-        >
-          <X size={24} />
-        </button>
-        <h2 className="text-xl font-bold mb-4">Set Budget Limit</h2>
+  if (loading) 
+    return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+    </div>
+  );
 
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">New Limit</label>
-          <input
-            type="number"
-            className="w-full border rounded-lg p-2"
-            placeholder="Enter new limit"
-            value={newLimit}
-            onChange={(e) => setNewLimit(e.target.value)}
-          />
-        </div>
-
-        <button
-          className="w-full bg-purple-500 text-white py-2 rounded-lg"
-          onClick={handleSetLimit}
-        >
-          Set Limit
-        </button>
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        Error: {error}
       </div>
     </div>
-  )}
+  );
 
   return (
-    <div className="bg-white p-6 max-w-4xl mx-auto relative">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-4">
-          <button className="text-gray-500">This month</button>
-          <select className="text-gray-500 bg-transparent">
-            <option>Sort by: Default</option>
-          </select>
-          <button className="text-gray-500">Reset all</button>
-        </div>
-        <button
-          className="bg-purple-500 text-white px-4 py-2 rounded-lg"
-          onClick={() => setIsAddBudgetModalOpen(true)}
-        >
-          + Add new budget
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+      <div className="mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Categories</h1>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
 
-      {/* Add Budget Modal */}
-      {isAddBudgetModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 relative">
-            <button
-              className="absolute top-4 right-4 text-gray-500"
-              onClick={() => setIsAddBudgetModalOpen(false)}
-            >
-              <X size={24} />
-            </button>
-            <h2 className="text-xl font-bold mb-4">Add New Budget</h2>
+          <button
+            onClick={handleGeneratePDF}
+            className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"
+          >
+            Download PDF
+          </button>
 
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2">Category</label>
-              <select
-                className="w-full border rounded-lg p-2"
-                value={newBudget.category}
-                onChange={(e) =>
-                  setNewBudget({ ...newBudget, category: e.target.value })
-                }
-              >
-                <option value="">Select Category</option>
-                {categories
-                  .filter(
-                    (cat) => !budgets.some((budget) => budget.category === cat)
-                  )
-                  .map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2">Budget Amount</label>
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
               <input
-                type="number"
-                className="w-full border rounded-lg p-2"
-                placeholder="Enter budget amount"
-                value={newBudget.budget}
-                onChange={(e) =>
-                  setNewBudget({ ...newBudget, budget: e.target.value })
-                }
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                </button>
+              )}
             </div>
-
+            
             <button
-              className="w-full bg-purple-500 text-white py-2 rounded-lg"
-              onClick={handleAddBudget}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors shadow-md hover:shadow-lg"
+              onClick={() => setIsAddCategoryModalOpen(true)}
             >
-              Add Budget
+              <Plus size={18} className="mr-1" />
+              Add Category
             </button>
           </div>
         </div>
-      )}
 
-      
-
-      {/* Budget Summary */}
-      <div className="bg-gray-100 p-4 rounded-lg mb-6">
-        <h3 className="font-semibold text-lg">Overall Budget</h3>
-        <div className="flex justify-between mt-2">
-          <span>Total Budget: </span>
-          <span>${totalBudget}</span>
-        </div>
-        <div className="flex justify-between mt-1">
-          <span>Total Spent: </span>
-          <span>${totalSpent}</span>
-        </div>
-        <div className="flex justify-between mt-1">
-          <span>Remaining Budget: </span>
-          <span>${totalBudget - totalSpent}</span>
-        </div>
-      </div>
-
-      {/* Budget List */}
-      <div className="grid grid-cols-3 gap-4">
-        {budgets.map((budget, index) => (
-          <div key={index} className="border rounded-lg p-4 relative">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">{budget.category}</h3>
-              <button
-                onClick={() => {
-                  setLimitCategory(budget.category);
-                  setIsSetLimitModalOpen(true);
-                }}
-              >
-                <MoreHorizontal className="text-gray-500" size={20} />
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="relative w-20 h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <path
-                    d="M18 2.0845
-                      a 15.9155 15.9155 0 0 1 0 31.831
-                      a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#E0E0E0"
-                    strokeWidth="3"
-                  />
-                  <path
-                    d="M18 2.0845
-                      a 15.9155 15.9155 0 0 1 0 31.831
-                      a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#8A56F8"
-                    strokeWidth="3"
-                    strokeDasharray={`${calculatePercentage(
-                      budget.spent,
-                      budget.budget
-                    )}, 100`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold">
-                    {calculatePercentage(budget.spent, budget.budget)}%
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold">${budget.spent}</span>
-                  <span className="text-gray-500">/ ${budget.budget}</span>
-                </div>
-                <div
-                  className={`flex items-center space-x-1 ${getStatusColor(
-                    budget.status
-                  )}`}
-                >
-                  {budget.status === "on-track" ? (
-                    <CheckCircle size={16} />
-                  ) : (
-                    <AlertCircle size={16} />
-                  )}
-                  <span className="text-sm capitalize">
-                    {budget.status.replace("-", " ")}
-                  </span>
-                </div>
-              </div>
-            </div>
+        {filteredCategories.length === 0 ? (
+          <div className="bg-white p-8 rounded-xl shadow-sm text-center border-2 border-dashed border-gray-200">
+            <p className="text-gray-500 mb-4">
+              {searchTerm 
+                ? "No categories match your search" 
+                : "No categories found. Create your first category!"}
+            </p>
+            <button
+              onClick={() => setIsAddCategoryModalOpen(true)}
+              className="text-purple-600 hover:text-purple-800 font-medium"
+            >
+              {searchTerm ? "Clear search" : "Add Category"}
+            </button>
           </div>
-        ))}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCategories.map((category) => (
+              <CategoryCard
+                key={category._id}
+                category={category}
+                onClick={() => openCategoryDetails(category)}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      <AddCategoryModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onAddCategory={handleAddCategory}
+      />
+
+      <CategoryDetailsModal
+        isOpen={isCategoryDetailsOpen}
+        onClose={() => setIsCategoryDetailsOpen(false)}
+        category={selectedCategory}
+        onAddBudgetClick={() => {
+          setIsCategoryDetailsOpen(false);
+          setIsAddBudgetModalOpen(true);
+        }}
+      />
+
+      <AddBudgetModal
+        isOpen={isAddBudgetModalOpen}
+        onClose={() => setIsAddBudgetModalOpen(false)}
+        category={selectedCategory}
+        onAddBudget={handleAddBudget}
+      />
     </div>
   );
 };
 
-export default Budgetpage;
+export default CategoryPage;

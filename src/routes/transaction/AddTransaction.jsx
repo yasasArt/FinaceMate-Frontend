@@ -3,17 +3,18 @@ import { PlusCircle, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-import { TRANSACTION_CATEGORIES } from '../../constants/transactionCategories';
 
 // Configure axios to send cookies
 axios.defaults.withCredentials = true;
 
-function AddTransaction() {
+function AddTransaction({ initialData, onTransactionAdded }) {
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
   const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
     transactionType: "",
     account: "",
@@ -25,9 +26,19 @@ function AddTransaction() {
     recurringInterval: ""
   });
 
-  // Fetch accounts from backend
+  // Handle initial data and fetch accounts
   useEffect(() => {
-    // Fetch accounts from backend with auth
+    if (initialData) {
+      setNewTransaction(prev => ({
+        ...prev,
+        ...initialData
+      }));
+      setShowForm(true);
+    }
+  }, [initialData]);
+
+  // Fetch accounts when form is shown
+  useEffect(() => {
     const fetchAccounts = async () => {
       try {
         const response = await axios.get('http://localhost:8088/api/v1/accounts');
@@ -35,7 +46,6 @@ function AddTransaction() {
                          response.data.data || 
                          [];
     
-        // Transform accounts into the format you need
         const formattedAccounts = accountsData.map(account => ({
           id: account._id || account.id,
           name: account.name,
@@ -43,7 +53,6 @@ function AddTransaction() {
         }));
         
         setAccounts(formattedAccounts);
-        console.log('Accounts:', response.data);
       } catch (error) {
         if (error.response?.status === 401) {
           handleUnauthorized();
@@ -59,17 +68,58 @@ function AddTransaction() {
     }
   }, [showForm]);
 
+  // Fetch categories when transaction type changes
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!newTransaction.transactionType) {
+        setCategories([]);
+        return;
+      }
+
+      try {
+        setLoadingCategories(true);
+        const response = await axios.get(
+          `http://localhost:8088/api/v1/categories?type=${newTransaction.transactionType}`
+        );
+        
+        const categoriesData = response.data.data?.categories || 
+                           response.data.data || 
+                           [];
+        
+        setCategories(categoriesData);
+      } catch (error) {
+        toast.error('Failed to load categories');
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, [newTransaction.transactionType]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setNewTransaction({
+  
+    let updatedTransaction = {
       ...newTransaction,
-      [name]: type === 'checkbox' ? checked : value,
-      [name]: name === "amount" ? parseFloat(value) : value,
-
-      // if isRecurring is fales, set recurringInterval in to null
-      recurringInterval: !newTransaction.isRecurring ? null : newTransaction.recurring
-
-    });
+      [name]: type === 'checkbox' ? checked : name === "amount" ? parseFloat(value) : value,
+    };
+  
+    // Reset category when transaction type changes
+    if (name === "transactionType") {
+      updatedTransaction.category = "";
+    }
+  
+    // Handle recurringInterval conditionally
+    if (name === "isRecurring") {
+      updatedTransaction = {
+        ...updatedTransaction,
+        recurringInterval: checked ? "daily" : ""
+      };
+    }
+  
+    setNewTransaction(updatedTransaction);
   };
 
   const handleSubmit = async (e) => {
@@ -77,10 +127,15 @@ function AddTransaction() {
     setLoading(true);
     
     try {
-
-      await axios.post("http://localhost:8088/api/v1/transactions", newTransaction)
-      .then(response => toast.success("Transaction added successfully!"))
-      .catch(error => toast.error('Failed to add transaction'));
+      await axios.post(
+        "http://localhost:8088/api/v1/transactions", 
+        {
+          ...newTransaction,
+          category: typeof newTransaction.category === 'object' 
+            ? newTransaction.category._id 
+            : newTransaction.category
+        }
+      );
 
       toast.success("Transaction added successfully!");
       setShowForm(false);
@@ -96,27 +151,18 @@ function AddTransaction() {
         recurringInterval: ""
       });
 
-      toast.success("Transaction added successfully!")
+      // Notify parent component
+      if (onTransactionAdded) {
+        onTransactionAdded();
+      }
 
-      // navigate to the transactions page
       navigate('/transactions');
-
     } catch (error) {
-      toast.error('Failed to add transaction');
+      toast.error(error.response?.data?.message || 'Failed to add transaction');
       console.error('Error adding transaction:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Get appropriate categories based on transaction type
-  const getCategories = () => {
-    if (newTransaction.transactionType === 'income') {
-      return TRANSACTION_CATEGORIES.INCOME;
-    } else if (newTransaction.transactionType === 'expense') {
-      return TRANSACTION_CATEGORIES.EXPENSE;
-    }
-    return [];
   };
 
   return (
@@ -213,20 +259,31 @@ function AddTransaction() {
                 {newTransaction.transactionType && (
                   <div className="flex flex-col">
                     <label className="text-gray-700 mb-1 font-medium">Category*</label>
-                    <select 
-                      name="category" 
-                      value={newTransaction.category} 
-                      onChange={handleChange}
-                      required
-                      className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="">Select Category</option>
-                      {getCategories().map(category => (
-                        <option key={category} value={category}>
-                          {category.split('_').join(' ')}
-                        </option>
-                      ))}
-                    </select>
+                    {loadingCategories ? (
+                      <select 
+                        disabled
+                        className="border border-gray-300 p-2 rounded-lg bg-gray-100 animate-pulse"
+                      >
+                        <option>Loading categories...</option>
+                      </select>
+                    ) : (
+                      <select 
+                        name="category" 
+                        value={typeof newTransaction.category === 'object' 
+                          ? newTransaction.category._id 
+                          : newTransaction.category} 
+                        onChange={handleChange}
+                        required
+                        className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
 
@@ -262,6 +319,7 @@ function AddTransaction() {
                       name="recurringInterval" 
                       value={newTransaction.recurringInterval} 
                       onChange={handleChange}
+                      required
                       className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="">Select Interval</option>
