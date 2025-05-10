@@ -31,16 +31,29 @@ const GoalsPage = () => {
   });
   const [showCompletedGoals, setShowCompletedGoals] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    sort: '-createdAt', // Default: Newest first
+    goalStatus: 'ongoing', // Filter by status
+    contributionInterval: '', // Optional: Filter by interval
+  });
 
   // Fetch goals and accounts from backend
   const fetchData = async () => {
     try {
       setLoading(true);
 
+      // Construct query object
+      const queryParams = {
+        sort: filters.sort,
+        goalStatus: filters.goalStatus,
+        contributionInterval: filters.contributionInterval
+      };
+
       // Fetch goals
       const goalsResponse = await axios.get(
         "http://localhost:8088/api/v1/goals",
         {
+          params: queryParams,
           withCredentials: true,
         }
       );
@@ -66,7 +79,7 @@ const GoalsPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [filters]);
 
   // Create new goal
   const handleCreateGoal = async () => {
@@ -234,6 +247,63 @@ const GoalsPage = () => {
                 <FaTimes className="text-gray-400 hover:text-gray-600" />
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-6 p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+          {/* Sort Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <select
+              value={filters.sort}
+              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+              className="p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="-createdAt">Newest First</option>
+              <option value="createdAt">Oldest First</option>
+              <option value="totalAmount">Highest Amount</option>
+              <option value="-totalAmount">Lowest Amount</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select
+              value={filters.goalStatus}
+              onChange={(e) => setFilters({ ...filters, goalStatus: e.target.value })}
+              className="p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="ongoing">Active</option>
+              <option value="completed">Completed</option>
+              <option value="">All</option>
+            </select>
+          </div>
+
+          {/* Interval Filter (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+            <select
+              value={filters.contributionInterval}
+              onChange={(e) => setFilters({ ...filters, contributionInterval: e.target.value })}
+              className="p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          {/* Reset Button */}
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({ sort: '-createdAt', goalStatus: 'ongoing', contributionInterval: '' })}
+              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Reset Filters
+            </button>
           </div>
         </div>
 
