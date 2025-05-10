@@ -52,6 +52,7 @@ const WalletPage = () => {
     setShowFormPopup(false);
     toast.success("Wallet added successfully!");
     alert("New wallet has been added successfully!"); // Popup message
+    window.location.reload(); // Refresh the page
   };
 
   const handleWalletClick = (wallet) => {
@@ -73,6 +74,7 @@ const WalletPage = () => {
       );
       setShowDetailsPopup(false);
       toast.success("Wallet updated successfully!");
+      window.location.reload(); // Refresh the page
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update wallet");
       console.error("Update error:", error);
@@ -88,6 +90,7 @@ const WalletPage = () => {
       setWallets((prev) => prev.filter((w) => w._id !== walletId));
       setShowDetailsPopup(false);
       toast.success("Wallet deleted successfully!");
+      window.location.reload(); // Refresh the page
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete wallet");
       console.error("Delete error:", error);
