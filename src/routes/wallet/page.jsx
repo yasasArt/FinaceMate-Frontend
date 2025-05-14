@@ -244,7 +244,7 @@ const WalletPage = () => {
 
       {/* Wallets Section */}
       <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Your All Wallets</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Your Wallets</h2>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
